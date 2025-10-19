@@ -1,0 +1,68 @@
+{
+  "name": "wynkjs",
+  "version": "1.0.0",
+  "description": "A high-performance TypeScript framework built on Elysia with NestJS-style decorators - 20x faster than Express",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "keywords": [
+    "wynk",
+    "wynkjs",
+    "elysia",
+    "framework",
+    "typescript",
+    "decorators",
+    "fast",
+    "web-framework",
+    "http",
+    "api",
+    "nestjs-alternative",
+    "dependency-injection",
+    "rest-api",
+    "backend",
+    "server"
+  ],
+  "author": "Alam Jamal alamjamal88@gmail.com",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wynkjs/wynkjs-core"
+  },
+  "bugs": {
+    "url": "https://github.com/wynkjs/wynkjs-core/issues"
+  },
+  "homepage": "https://github.com/wynkjs/wynkjs-core#readme",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "bun test"
+  },
+  "peerDependencies": {
+    "elysia": "^1.0.0",
+    "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "elysia": "^1.0.0",
+    "reflect-metadata": "^0.2.2",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "tsyringe": "^4.10.0"
+  }
+}

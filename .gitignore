@@ -1,0 +1,17 @@
+# Node / JS framework - common ignores
+node_modules/
+dist/
+build/
+coverage/
+.cache/
+logs/
+*.log
+.env
+.env.*.local
+.DS_Store
+.vscode/
+.idea/
+
+# Ignore markdown files but keep README.md tracked
+*.md
+!README.md
