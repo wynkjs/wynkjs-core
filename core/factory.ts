@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import "reflect-metadata";
 import { container } from "tsyringe";
+import { Value } from "@sinclair/typebox/value";
 import {
   createExecutionContext,
   executeGuards,
@@ -12,6 +13,7 @@ import {
   HttpException,
 } from "./decorators/exception.decorators";
 import { ParamMetadata } from "./decorators/param.decorators";
+import { ErrorFormatter } from "./decorators/exception.advanced";
 
 /**
  * Application Factory for WynkJS Framework
@@ -22,6 +24,7 @@ export interface ApplicationOptions {
   cors?: boolean | any;
   globalPrefix?: string;
   logger?: boolean;
+  validationErrorFormatter?: ErrorFormatter;
 }
 
 export class WynkFramework {
@@ -31,9 +34,109 @@ export class WynkFramework {
   private globalInterceptors: any[] = [];
   private globalPipes: any[] = [];
   private globalFilters: any[] = [];
+  private validationFormatter?: ErrorFormatter;
 
   constructor(options: ApplicationOptions = {}) {
     this.app = new Elysia();
+    this.validationFormatter = options.validationErrorFormatter;
+
+    // Configure Elysia's error handling for validation errors
+    this.app.onError(({ code, error, set }) => {
+      // Handle ValidationError from Elysia
+      if (
+        code === "VALIDATION" ||
+        (error as any)?.constructor?.name === "ValidationError"
+      ) {
+        const validationError = error as any;
+        set.status = 400;
+
+        // Try to collect all validation errors using TypeBox
+        const allErrors: Record<string, string[]> = {};
+
+        // Check if we have the validator and value to collect all errors
+        if (validationError.validator && validationError.value) {
+          const schema =
+            validationError.validator.schema || validationError.validator;
+
+          // Use TypeBox's Errors iterator to collect ALL validation errors
+          try {
+            const errors = [...Value.Errors(schema, validationError.value)];
+
+            if (errors.length > 0) {
+              errors.forEach((err: any) => {
+                const field = err.path?.replace(/^\//, "") || "unknown";
+                if (!allErrors[field]) {
+                  allErrors[field] = [];
+                }
+                allErrors[field].push(err.message || "Validation failed");
+              });
+            } else {
+              // Fallback to single error
+              const field =
+                validationError.valueError?.path?.replace(/^\//, "") ||
+                validationError.on ||
+                "body";
+              const message =
+                validationError.customError ||
+                validationError.valueError?.message ||
+                "Validation failed";
+              allErrors[field] = [message];
+            }
+          } catch (e) {
+            // Fallback to single error if TypeBox iteration fails
+            const field =
+              validationError.valueError?.path?.replace(/^\//, "") ||
+              validationError.on ||
+              "body";
+            const message =
+              validationError.customError ||
+              validationError.valueError?.message ||
+              "Validation failed";
+            allErrors[field] = [message];
+          }
+        } else {
+          // Fallback to single error
+          const field =
+            validationError.valueError?.path?.replace(/^\//, "") ||
+            validationError.on ||
+            "body";
+          const message =
+            validationError.customError ||
+            validationError.valueError?.message ||
+            "Validation failed";
+          allErrors[field] = [message];
+        }
+
+        // If a custom formatter is provided, use it
+        if (this.validationFormatter) {
+          // Convert allErrors to the format expected by formatters
+          const formattedError = {
+            errors: Object.entries(allErrors).map(([field, messages]) => ({
+              path: `/${field}`,
+              summary: messages[0],
+              message: messages.join(", "),
+            })),
+          };
+          return this.validationFormatter.format(formattedError);
+        }
+
+        // Default format: { statusCode, message, errors: { field: [messages] } }
+        return {
+          statusCode: 400,
+          message: "Validation failed",
+          errors: allErrors,
+        };
+      }
+
+      // Default error handling
+      const err = error as any;
+      set.status = err.status || 500;
+      return {
+        statusCode: err.status || 500,
+        message: err.message || "Internal server error",
+        error: err.name || "Error",
+      };
+    });
 
     // Apply CORS if enabled
     if (options.cors) {

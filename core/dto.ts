@@ -35,6 +35,37 @@ import { t } from "elysia";
 export const DTO: any = t;
 
 /**
+ * Helper to attach strict validation to a DTO Object schema
+ * Sets additionalProperties to false which makes Elysia strip unknown fields
+ *
+ * NOTE: Elysia's default behavior is to STRIP additional properties, not throw errors.
+ * This is secure by default. If you need to throw errors on unknown properties,
+ * use the approach documented in STRICT_VALIDATION.md
+ *
+ * @param properties - Object properties schema
+ * @param options - Additional schema options
+ * @returns TypeBox schema with additionalProperties: false
+ *
+ * @example
+ * export const UserDTO = DTO.Strict({
+ *   email: DTO.String(),
+ *   age: DTO.Number()
+ * });
+ *
+ * // Request: { email: "test@test.com", age: 25, extra: "field" }
+ * // Result: { email: "test@test.com", age: 25 } ← extra stripped (secure)
+ */
+DTO.Strict = (
+  properties: Record<string, any>,
+  options: Record<string, any> = {}
+) => {
+  return t.Object(properties, {
+    ...options,
+    additionalProperties: false,
+  });
+};
+
+/**
  * Common DTO patterns for quick use
  */
 export const CommonDTO = {
@@ -45,8 +76,14 @@ export const CommonDTO = {
 
   /**
    * Email validation
+   * Uses format: email which validates basic email structure
    */
-  Email: (options = {}) => t.String({ format: "email", ...options }),
+  Email: (options: any = {}) =>
+    t.String({
+      format: "email",
+      error: "Invalid email address",
+      ...options,
+    }),
 
   /**
    * Password validation (min 6 characters)

@@ -30,24 +30,25 @@ WynkJS combines the **speed of Elysia** with the **elegant decorator syntax of N
 
 - 🚀 **20x Faster** - Built on Elysia, one of the fastest web frameworks
 - 🎨 **Decorator-Based** - Familiar NestJS-style decorators
-- 💉 **Dependency Injection** - Built-in DI with tsyringe
+- 💉 **Dependency Injection** - Built-in DI (no need to import reflect-metadata!)
 - 🔒 **Type-Safe** - Full TypeScript support
 - 🎯 **Simple & Clean** - Easy to learn, powerful to use
 - 🔌 **Middleware Support** - Guards, interceptors, pipes, filters
 - ⚡ **Hot Reload** - Fast development with Bun
+- 📦 **Single Import** - Everything from `wynkjs` (Injectable, Controller, Get, etc.)
 
 ---
 
 ## 📦 Installation
 
 ```bash
-npm install wynkjs elysia reflect-metadata
+npm install wynkjs elysia
 ```
 
 Or with Bun:
 
 ```bash
-bun add wynkjs elysia reflect-metadata
+bun add wynkjs elysia
 ```
 
 ---
@@ -57,10 +58,9 @@ bun add wynkjs elysia reflect-metadata
 ### 1. Create Your First Controller
 
 ```typescript
-import { Controller, Get, Post, Body } from "wynkjs";
-import { injectable } from "tsyringe";
+import { Controller, Get, Post, Body, Param, Injectable } from "wynkjs";
 
-@injectable()
+@Injectable()
 @Controller("/users")
 export class UserController {
   @Get("/")
@@ -83,11 +83,10 @@ export class UserController {
 ### 2. Create Your Application
 
 ```typescript
-import "reflect-metadata";
-import { WynkFramework } from "wynkjs";
+import { WynkFactory } from "wynkjs";
 import { UserController } from "./controllers/user.controller";
 
-const app = await WynkFramework.create({
+const app = WynkFactory.create({
   controllers: [UserController],
 });
 
@@ -95,6 +94,8 @@ await app.listen(3000);
 
 console.log("🚀 Server running on http://localhost:3000");
 ```
+
+**Note**: No need to import `reflect-metadata` - WynkJS handles it automatically! ✨
 
 ### 3. Run Your Server
 
@@ -211,19 +212,20 @@ export class AdminController {
 ### 💉 Dependency Injection
 
 ```typescript
-import { injectable, inject } from "tsyringe";
+// Option 1: Capital-cased (recommended for consistency)
+import { Injectable, Inject, Controller, Get } from "wynkjs";
 
-@injectable()
+@Injectable()
 export class UserService {
   async findAll() {
     return [{ id: 1, name: "Alice" }];
   }
 }
 
-@injectable()
+@Injectable()
 @Controller("/users")
 export class UserController {
-  constructor(@inject(UserService) private userService: UserService) {}
+  constructor(private userService: UserService) {}
 
   @Get("/")
   async list() {
@@ -232,6 +234,22 @@ export class UserController {
   }
 }
 ```
+
+```typescript
+// Option 2: Lowercase (tsyringe convention)
+import { Injectable, Inject, Controller, Get } from "wynkjs";
+
+@Injectable()
+export class UserService {
+  async findAll() {
+    return [{ id: 1, name: "Alice" }];
+  }
+}
+```
+
+**Available DI decorators**:
+
+- Capital: `Injectable`, `Inject`, `Singleton`, `AutoInjectable`, `Container`
 
 ### 🗃️ Database Integration (Drizzle ORM)
 
@@ -250,7 +268,7 @@ const userTable = pgTable("users", {
 // Register tables
 registerTables({ userTable });
 
-@injectable()
+@Injectable()
 export class UserService {
   private db = drizzle(process.env.DATABASE_URL);
 
@@ -264,14 +282,16 @@ export class UserService {
 
 ### 📝 Request Validation
 
-```typescript
-import { Post, Body, UsePipes } from "wynkjs";
-import { t } from "elysia";
+WynkJS provides automatic request validation with customizable error formats:
 
-const CreateUserDTO = t.Object({
-  name: t.String({ minLength: 2 }),
-  email: t.String({ format: "email" }),
-  password: t.String({ minLength: 8 }),
+```typescript
+import { Post, Body, DTO, WynkFactory, FormatErrorFormatter } from "wynkjs";
+
+// Define your DTO with validation rules
+const CreateUserDTO = DTO.Strict({
+  name: DTO.String({ minLength: 2 }),
+  email: DTO.String({ format: "email", minLength: 5 }),
+  age: DTO.Number({ minimum: 18 }),
 });
 
 @Controller("/users")
@@ -285,7 +305,20 @@ export class UserController {
     return { message: "User created", data: body };
   }
 }
+
+// Choose your validation error format
+const app = WynkFactory.create({
+  controllers: [UserController],
+  // Option 1: Default format (recommended)
+  // validationErrorFormatter: new FormatErrorFormatter(), // NestJS-style
+  // Option 2: Simple array format
+  // validationErrorFormatter: new SimpleErrorFormatter(),
+  // Option 3: Detailed format with field info
+  // validationErrorFormatter: new DetailedErrorFormatter(),
+});
 ```
+
+**See [VALIDATION_FORMATTERS.md](./docs/VALIDATION_FORMATTERS.md) for all available error formats**
 
 ### 🔄 Multiple Middleware
 
@@ -357,16 +390,26 @@ console.log("🚀 Server running on http://localhost:3000");
 
 ```typescript
 // controllers/user.controller.ts
-import { Controller, Get, Post, Put, Delete, Body, Param, Use } from "wynkjs";
-import { injectable, inject } from "tsyringe";
+import {
+  Injectable,
+  Inject,
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Use,
+} from "wynkjs";
 import { UserService } from "../services/user.service";
 import { jwtGuard } from "../middleware/jwt.guard";
 
-@injectable()
+@Injectable()
 @Controller("/users")
 @Use(jwtGuard)
 export class UserController {
-  constructor(@inject(UserService) private userService: UserService) {}
+  constructor(@Inject(UserService) private userService: UserService) {}
 
   @Get("/")
   async list() {
@@ -402,9 +445,8 @@ export class UserController {
 
 ```typescript
 // services/user.service.ts
-import { injectable } from "tsyringe";
 
-@injectable()
+@Injectable()
 export class UserService {
   private users = [
     { id: "1", name: "Alice", email: "alice@example.com" },

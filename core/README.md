@@ -7,6 +7,7 @@
 ### ✅ What's Included
 
 - **Decorators** - @Controller, @Get, @Post, @Body, @Param, etc.
+- **Dependency Injection** - @Injectable, @Inject, @Singleton, etc. (powered by tsyringe)
 - **Guards** - Route protection and authorization
 - **Pipes** - Input validation and transformation
 - **Interceptors** - Request/response modification
@@ -57,6 +58,43 @@ WynkJS doesn't force you to change anything. Keep using your existing database p
 
 We focus on making decorators and middleware work beautifully with Elysia.
 Everything else? **You decide.**
+
+### 💉 Dependency Injection
+
+WynkJS includes full dependency injection support with **zero manual imports required**:
+
+```typescript
+import { Injectable, Controller, Get } from "wynkjs";
+
+@Injectable()
+export class UserService {
+  getUsers() {
+    return [{ id: 1, name: "Alice" }];
+  }
+}
+
+@Injectable()
+@Controller("/api")
+export class UserController {
+  constructor(private userService: UserService) {}
+
+  @Get("/users")
+  getAll() {
+    return this.userService.getUsers();
+  }
+}
+```
+
+**Available decorators** (both naming conventions supported):
+
+- `@Injectable()` / `@injectable()` - Mark class as injectable
+- `@Inject()` / `@inject()` - Inject specific dependency
+- `@Singleton()` / `@singleton()` - Create singleton instance
+- `@AutoInjectable()` / `@autoInjectable()` - Auto-inject dependencies
+- `Registry` / `registry` - Manual registration
+- `Container` / `container` - Direct container access
+
+**No need to import `reflect-metadata` or `tsyringe` separately!** WynkJS handles everything internally.
 
 ---
 

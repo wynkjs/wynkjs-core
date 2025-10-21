@@ -30,17 +30,20 @@ export function Controller(path: string = ""): ClassDecorator {
 
 /**
  * HTTP GET decorator
- * @param path Route path
- * @param options Route configuration options
+ * @param pathOrOptions Route path or options with DTO
  * @example
  * @Get('/profile')
  * async getProfile() {}
+ *
+ * @Get({ path: '/:id', params: UserIdDTO, query: QueryDTO })
+ * async findOne(@Param('id') id: string, @Query() query: any) {}
  */
-export function Get(
-  path: string = "",
-  options?: RouteOptions
-): MethodDecorator {
-  return createRouteDecorator("GET", path, options);
+export function Get(pathOrOptions?: string | RouteOptions): MethodDecorator {
+  if (typeof pathOrOptions === "string") {
+    return createRouteDecorator("GET", pathOrOptions);
+  }
+  const options = pathOrOptions || {};
+  return createRouteDecorator("GET", options.path || "", options);
 }
 
 /**
@@ -102,41 +105,46 @@ export function Patch(pathOrOptions?: string | RouteOptions): MethodDecorator {
 
 /**
  * HTTP DELETE decorator
- * @param path Route path
- * @param options Route configuration options
+ * @param pathOrOptions Route path or options with DTO
  * @example
  * @Delete('/:id')
  * async remove(@Param('id') id: string) {}
+ *
+ * @Delete({ path: '/:id', params: UserIdDTO })
+ * async remove(@Param('id') id: string) {}
  */
-export function Delete(
-  path: string = "",
-  options?: RouteOptions
-): MethodDecorator {
-  return createRouteDecorator("DELETE", path, options);
+export function Delete(pathOrOptions?: string | RouteOptions): MethodDecorator {
+  if (typeof pathOrOptions === "string") {
+    return createRouteDecorator("DELETE", pathOrOptions);
+  }
+  const options = pathOrOptions || {};
+  return createRouteDecorator("DELETE", options.path || "", options);
 }
 
 /**
  * HTTP OPTIONS decorator
- * @param path Route path
- * @param options Route configuration options
+ * @param pathOrOptions Route path or options with DTO
  */
 export function Options(
-  path: string = "",
-  options?: RouteOptions
+  pathOrOptions?: string | RouteOptions
 ): MethodDecorator {
-  return createRouteDecorator("OPTIONS", path, options);
+  if (typeof pathOrOptions === "string") {
+    return createRouteDecorator("OPTIONS", pathOrOptions);
+  }
+  const options = pathOrOptions || {};
+  return createRouteDecorator("OPTIONS", options.path || "", options);
 }
 
 /**
  * HTTP HEAD decorator
- * @param path Route path
- * @param options Route configuration options
+ * @param pathOrOptions Route path or options with DTO
  */
-export function Head(
-  path: string = "",
-  options?: RouteOptions
-): MethodDecorator {
-  return createRouteDecorator("HEAD", path, options);
+export function Head(pathOrOptions?: string | RouteOptions): MethodDecorator {
+  if (typeof pathOrOptions === "string") {
+    return createRouteDecorator("HEAD", pathOrOptions);
+  }
+  const options = pathOrOptions || {};
+  return createRouteDecorator("HEAD", options.path || "", options);
 }
 
 /**
@@ -162,7 +170,9 @@ function createRouteDecorator(
       options,
     });
     console.log(
-      `🔹 Storing route: ${method} ${path} on ${constructor.name}.${String(propertyKey)} (routes: ${routes.length})`
+      `🔹 Storing route: ${method} ${path} on ${constructor.name}.${String(
+        propertyKey
+      )} (routes: ${routes.length})`
     );
     Reflect.defineMetadata("routes", routes, constructor.prototype);
 

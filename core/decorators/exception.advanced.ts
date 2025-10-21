@@ -16,27 +16,172 @@ import {
  */
 
 /**
- * Validation Exception Filter - Handles validation errors
- * @example
- * @UseFilters(ValidationExceptionFilter)
- * @Post()
- * async create(@Body() data: any) {}
+ * Error Formatter Interface
+ * Used by ValidationExceptionFilter to format validation errors
  */
-export class ValidationExceptionFilter
-  implements WynkExceptionFilter<BadRequestException>
-{
-  catch(exception: BadRequestException, context: ExecutionContext) {
-    const response = context.getResponse();
-    const request = context.getRequest();
+export interface ErrorFormatter {
+  format(validationError: any): any;
+}
+
+/**
+ * FormatErrorFormatter - Formats as { field: [messages] } like NestJS
+ */
+export class FormatErrorFormatter implements ErrorFormatter {
+  format(error: any): any {
+    const formattedErrors: Record<string, string[]> = {};
+
+    if (error.errors && error.errors.length > 0) {
+      error.errors.forEach((err: any) => {
+        const field = err.path?.replace(/^\//, "") || "unknown";
+        if (!formattedErrors[field]) {
+          formattedErrors[field] = [];
+        }
+        formattedErrors[field].push(err.summary || err.message);
+      });
+    } else {
+      const field = error.property?.replace(/^\//, "") || "unknown";
+      formattedErrors[field] = [error.summary || error.message];
+    }
 
     return {
-      statusCode: exception.statusCode,
-      error: "Validation Error",
-      message: exception.message,
-      errors: (exception as any).errors || [],
-      timestamp: new Date().toISOString(),
-      path: request.url,
+      statusCode: 400,
+      message: "Validation failed",
+      errors: formattedErrors,
     };
+  }
+}
+
+/**
+ * SimpleErrorFormatter - Formats as simple array of messages
+ */
+export class SimpleErrorFormatter implements ErrorFormatter {
+  format(error: any): any {
+    const messages: string[] = [];
+
+    if (error.errors && error.errors.length > 0) {
+      error.errors.forEach((err: any) => {
+        messages.push(err.summary || err.message);
+      });
+    } else {
+      messages.push(error.summary || error.message);
+    }
+
+    return {
+      statusCode: 400,
+      message: "Validation failed",
+      errors: messages,
+    };
+  }
+}
+
+/**
+ * DetailedErrorFormatter - Formats with detailed field info
+ */
+export class DetailedErrorFormatter implements ErrorFormatter {
+  format(error: any): any {
+    const errors: Array<{
+      field: string;
+      message: string;
+      value?: any;
+      expected?: any;
+    }> = [];
+
+    if (error.errors && error.errors.length > 0) {
+      error.errors.forEach((err: any) => {
+        errors.push({
+          field: err.path?.replace(/^\//, "") || "unknown",
+          message: err.summary || err.message,
+          value: err.value,
+          expected: err.schema,
+        });
+      });
+    } else {
+      errors.push({
+        field: error.property?.replace(/^\//, "") || "unknown",
+        message: error.summary || error.message,
+        value: error.found,
+        expected: error.expected,
+      });
+    }
+
+    return {
+      statusCode: 400,
+      message: "Validation failed",
+      errors,
+    };
+  }
+}
+
+/**
+ * Validation Exception Filter - Handles validation errors with customizable formatting
+ * @example
+ * // With FormatErrorFormatter (NestJS-style)
+ * app.useGlobalFilters(new ValidationExceptionFilter(new FormatErrorFormatter()));
+ *
+ * // With SimpleErrorFormatter
+ * app.useGlobalFilters(new ValidationExceptionFilter(new SimpleErrorFormatter()));
+ *
+ * // With DetailedErrorFormatter
+ * app.useGlobalFilters(new ValidationExceptionFilter(new DetailedErrorFormatter()));
+ *
+ * // Without formatter (default detailed format)
+ * app.useGlobalFilters(new ValidationExceptionFilter());
+ */
+export class ValidationExceptionFilter implements WynkExceptionFilter {
+  private formatter: ErrorFormatter | null = null;
+
+  constructor(formatter?: ErrorFormatter) {
+    this.formatter = formatter || null;
+  }
+
+  catch(exception: any, context: ExecutionContext) {
+    const request = context.getRequest();
+
+    // Check if this is a validation error from Elysia
+    const isValidationError = this.isValidationError(exception);
+
+    if (!isValidationError) {
+      // Not a validation error, re-throw to let other filters handle it
+      throw exception;
+    }
+
+    // Parse the validation error
+    let validationError: any;
+    if (typeof exception.message === "string") {
+      try {
+        validationError = JSON.parse(exception.message);
+      } catch {
+        validationError = { message: exception.message };
+      }
+    } else {
+      validationError = exception;
+    }
+
+    // Format the error using the provided formatter
+    if (this.formatter) {
+      return this.formatter.format(validationError);
+    }
+
+    // Default format (detailed)
+    return new DetailedErrorFormatter().format(validationError);
+  }
+
+  private isValidationError(exception: any): boolean {
+    if (!exception) return false;
+
+    // Check if it's a validation error by looking at the error structure
+    if (exception.message && typeof exception.message === "string") {
+      try {
+        const parsed = JSON.parse(exception.message);
+        return parsed.type === "validation";
+      } catch {
+        return false;
+      }
+    }
+
+    return (
+      exception.type === "validation" || exception.code === "VALIDATION_ERROR"
+    );
   }
 }
 

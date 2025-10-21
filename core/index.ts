@@ -6,6 +6,32 @@
  * @license MIT
  */
 
+// Import reflect-metadata at the top of the framework
+// This ensures users don't need to import it manually
+import "reflect-metadata";
+
+// Re-export tsyringe decorators for dependency injection
+// Users can import these from 'wynkjs' instead of 'tsyringe'
+export {
+  injectable,
+  inject,
+  singleton,
+  autoInjectable,
+  registry,
+  container,
+} from "tsyringe";
+export type { DependencyContainer } from "tsyringe";
+
+// Capital-cased aliases for consistency with WynkJS naming convention
+export {
+  injectable as Injectable,
+  inject as Inject,
+  singleton as Singleton,
+  autoInjectable as AutoInjectable,
+  registry as Registry,
+  container as Container,
+} from "tsyringe";
+
 // HTTP Method Decorators
 export * from "./decorators/http.decorators";
 

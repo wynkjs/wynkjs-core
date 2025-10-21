@@ -1,0 +1,7 @@
+{
+  "watch": [".", "../example"],
+  "ext": "ts,json",
+  "ignore": ["node_modules", "*.log"],
+  "exec": "bun run index.ts",
+  "delay": "1000"
+}
