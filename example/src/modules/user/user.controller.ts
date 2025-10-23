@@ -10,22 +10,20 @@ import {
   NotFoundException,
   Injectable,
 } from "wynkjs";
-import {
-  CreateUserDTO,
-  UserIdDto,
-  UserQueryDto,
-  UserUpdateDTO,
-  MultiParamDto,
-} from "./user.dto";
 
-import type {
-  CreateUserType,
-  ParamIdType,
-  UserQueryType,
-  UserUpdateType,
-  MultiParamType,
+import {
+  type CreateUserType,
+  type ParamIdType,
+  type UserQueryType,
+  type UserUpdateType,
+  type MultiParamType,
+  CreateUserDTO,
+  MultiParamDto,
+  UserQueryDto,
+  UserIdDto,
+  UserUpdateDTO,
 } from "./user.dto";
-import { EmailService } from "./email.service";
+import { EmailService } from "../email/email.service";
 
 @Injectable()
 @Controller("/users")

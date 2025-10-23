@@ -1,7 +1,7 @@
 {
   "name": "wynkjs",
-  "version": "1.0.1",
-  "description": "A high-performance TypeScript framework built on Elysia with NestJS-style decorators - 20x faster than Express",
+  "version": "1.0.2",
+  "description": "A high-performance TypeScript framework built on Elysia for Bun with NestJS-style decorators - 20x faster than Express",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,6 +10,7 @@
     "wynk",
     "wynkjs",
     "elysia",
+    "bun",
     "framework",
     "typescript",
     "decorators",
@@ -45,11 +46,11 @@
   "devDependencies": {
     "elysia": "^1.0.0",
     "reflect-metadata": "^0.2.2",
-    "@types/node": "^20.0.0",
+    "@types/bun": "latest",
     "typescript": "^5.0.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "bun": ">=1.0.0"
   },
   "exports": {
     ".": {

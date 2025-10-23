@@ -13,5 +13,5 @@ logs/
 .idea/
 
 # Ignore markdown files but keep README.md tracked
-*.md
-!README.md
+
+docs/

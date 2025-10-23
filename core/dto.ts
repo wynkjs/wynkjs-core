@@ -3,14 +3,15 @@
  * Re-exports Elysia's TypeBox for DTO validation
  */
 
-import { t } from "elysia";
+import { t, type TSchema } from "elysia";
 
 /**
- * Export Elysia's TypeBox as DTO builder
- * This provides runtime validation for request bodies, queries, params, etc.
+ * DTO Builder - Full TypeBox support with IntelliSense
+ *
+ * Provides runtime validation for request bodies, queries, params, etc.
  *
  * @example
- * import { DTO } from '@wynkjs/framework';
+ * import { DTO } from 'wynkjs';
  *
  * export const CreateUserDTO = DTO.Object({
  *   name: DTO.String({ minLength: 2, maxLength: 50 }),
@@ -27,12 +28,17 @@ import { t } from "elysia";
  *   }
  * }
  */
-// Note: Elysia's type builder exposes internal option types that TypeScript
-// cannot emit in d.ts files (TS4023). To keep declaration generation clean
-// while preserving runtime behavior, we export DTO with an `any` type.
-// Consumers still get runtime validation; for static typing, prefer using
-// `Static<TSchema>` from Elysia which we re-export below.
-export const DTO: any = t;
+export const DTO = t as typeof t & {
+  /**
+   * Create a strict object schema that strips additional properties
+   * @param properties - Object properties schema
+   * @param options - Additional schema options
+   */
+  Strict: (
+    properties: Record<string, TSchema>,
+    options?: Record<string, any>
+  ) => TSchema;
+};
 
 /**
  * Helper to attach strict validation to a DTO Object schema

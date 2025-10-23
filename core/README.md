@@ -94,8 +94,6 @@ export class UserController {
 - `Registry` / `registry` - Manual registration
 - `Container` / `container` - Direct container access
 
-**No need to import `reflect-metadata` or `tsyringe` separately!** WynkJS handles everything internally.
-
 ---
 
 **Built with ❤️ by the WynkJS Team**

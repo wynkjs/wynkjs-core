@@ -13,14 +13,12 @@
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
         "declaration": true,
         "declarationMap": true,
         "sourceMap": true
     },
     "include": [
-        "**/*.ts"
+        "src/**/*.ts"
     ],
     "exclude": [
         "node_modules",

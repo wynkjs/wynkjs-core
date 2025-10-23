@@ -7,9 +7,11 @@ import {
 } from "wynkjs";
 
 import { GlobalExceptionFilter, DatabaseExceptionFilter } from "wynkjs";
-import { UserController } from "./user.controller";
-import { ValidationExceptionFilter } from "./validation.filter";
-import { CustomExceptionFilter } from "./custom.filter";
+import { UserController } from "./modules/user/user.controller";
+import { ValidationExceptionFilter } from "./filter/validation.filter";
+import { CustomExceptionFilter } from "./filter/custom.filter";
+import { CartController } from "./modules/cart/controllers/cart.controller";
+import { ProductController } from "./modules/product/controllers/product.controller";
 /**
  * Bootstrap WynkJS Application
  * Example of using WynkJS framework with Database Registry
@@ -25,10 +27,10 @@ async function bootstrap() {
   // Create WynkJS application with all controllers
   // Option 1: Default format { field: [messages] }
   const app = WynkFactory.create({
-    controllers: [UserController],
+    controllers: [UserController, CartController, ProductController],
     cors: true,
     logger: true,
-    // validationErrorFormatter: new DetailedErrorFormatter(),
+    validationErrorFormatter: new DetailedErrorFormatter(),
   });
 
   // Option 2: With FormatErrorFormatter (NestJS-style format)
