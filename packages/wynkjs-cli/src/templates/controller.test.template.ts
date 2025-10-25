@@ -7,7 +7,7 @@ export function generateControllerTestTemplate(name: string): string {
   const serviceVarName =
     entityName.charAt(0).toLowerCase() + entityName.slice(1) + "Service";
 
-  return `import { describe, it, expect, beforeEach } from "bun:test";
+  return `import { describe, it, expect, beforeAll } from "bun:test";
 import { Test, MockFactory } from "wynkjs";
 import { ${className} } from "./${name}.controller";
 import { ${serviceName} } from "./${name}.service";
@@ -16,7 +16,7 @@ describe("${className}", () => {
   let controller: ${className};
   let ${serviceVarName}: ${serviceName};
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const module = await Test.createTestingModule({
       controllers: [${className}],
       providers: [${serviceName}],
@@ -35,29 +35,10 @@ describe("${className}", () => {
     });
   });
 
-  describe("findOne", () => {
-    it("should return a single ${name}", async () => {
-      // Create a test ${name}
-      const created = ${serviceVarName}.create({});
-      
-      const result = await controller.findOne(created.id);
-      
-      expect(result).toBeDefined();
-      expect(result.data).toBeDefined();
-      expect(result.data.id).toBe(created.id);
-    });
-
-    it("should throw NotFoundException when ${name} not found", async () => {
-      expect(async () => {
-        await controller.findOne("nonexistent-id");
-      }).toThrow();
-    });
-  });
-
   describe("create", () => {
     it("should create a new ${name}", async () => {
       const createDto = {
-        // Add test data here
+        name: "Test ${entityName}",
       };
 
       const result = await controller.create(createDto);
@@ -69,16 +50,37 @@ describe("${className}", () => {
     });
   });
 
+  describe("findOne", () => {
+    it("should return a single ${name}", async () => {
+      // Create a test ${name} first
+      const createDto = { name: "Test ${entityName} for FindOne" };
+      const created = await controller.create(createDto);
+      
+      const result = await controller.findOne(created.data.id);
+      
+      expect(result).toBeDefined();
+      expect(result.data).toBeDefined();
+      expect(result.data.id).toBe(created.data.id);
+    });
+
+    it("should throw NotFoundException when ${name} not found", async () => {
+      expect(async () => {
+        await controller.findOne("nonexistent-id");
+      }).toThrow();
+    });
+  });
+
   describe("update", () => {
     it("should update an existing ${name}", async () => {
-      // Create a test ${name}
-      const created = ${serviceVarName}.create({});
+      // Create a test ${name} first
+      const createDto = { name: "Test ${entityName} for Update" };
+      const created = await controller.create(createDto);
       
       const updateDto = {
-        // Add update data here
+        name: "Updated ${entityName}",
       };
 
-      const result = await controller.update(created.id, updateDto);
+      const result = await controller.update(created.data.id, updateDto);
       
       expect(result).toBeDefined();
       expect(result.message).toBe("${entityName} updated successfully");
@@ -94,10 +96,11 @@ describe("${className}", () => {
 
   describe("remove", () => {
     it("should delete an existing ${name}", async () => {
-      // Create a test ${name}
-      const created = ${serviceVarName}.create({});
+      // Create a test ${name} first
+      const createDto = { name: "Test ${entityName} for Delete" };
+      const created = await controller.create(createDto);
       
-      const result = await controller.remove(created.id);
+      const result = await controller.remove(created.data.id);
       
       expect(result).toBeDefined();
       expect(result.message).toBe("${entityName} deleted successfully");

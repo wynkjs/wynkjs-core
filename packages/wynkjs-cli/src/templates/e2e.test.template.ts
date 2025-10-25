@@ -28,7 +28,9 @@ describe("${capitalizedName} Module E2E", () => {
   let created${capitalizedName}Id: string;
 
   beforeAll(async () => {
-    app = await startTestApp([${capitalizedName}Controller], 3001);
+    // Use a unique port to avoid conflicts with other E2E tests
+    const port = 3000 + Math.floor(Math.random() * 9000);
+    app = await startTestApp([${capitalizedName}Controller], port);
   });
 
   afterAll(async () => {
