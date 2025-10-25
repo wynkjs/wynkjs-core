@@ -23,9 +23,9 @@ bun add -D wynkjs-cli
 Generate a complete CRUD module with controller, service, and DTO in a folder:
 
 ```bash
-wynkjs generate module product
+wynkjs-cli generate module product
 # or
-wynkjs g m product
+wynkjs-cli g m product
 ```
 
 This creates:
@@ -45,9 +45,9 @@ src/modules/product/
 Generate a controller with all HTTP methods (GET, POST, PUT, PATCH, DELETE):
 
 ```bash
-wynkjs generate controller user
+wynkjs-cli generate controller user
 # or
-wynkjs g c user
+wynkjs-cli g c user
 ```
 
 This creates:
@@ -60,9 +60,9 @@ This creates:
 Generate a service with all CRUD methods:
 
 ```bash
-wynkjs generate service user
+wynkjs-cli generate service user
 # or
-wynkjs g s user
+wynkjs-cli g s user
 ```
 
 This creates:
@@ -74,9 +74,9 @@ This creates:
 Generate DTOs (Create, Update, and ID parameter DTOs):
 
 ```bash
-wynkjs generate dto user
+wynkjs-cli generate dto user
 # or
-wynkjs g d user
+wynkjs-cli g d user
 ```
 
 This creates:
@@ -215,23 +215,23 @@ export const ProductIdDto = DTO.Object({
 
 ## 🎯 Commands Reference
 
-| Command                             | Alias               | Description                   |
-| ----------------------------------- | ------------------- | ----------------------------- |
-| `wynkjs generate module <name>`     | `wynkjs g m <name>` | Generate complete CRUD module |
-| `wynkjs generate controller <name>` | `wynkjs g c <name>` | Generate controller only      |
-| `wynkjs generate service <name>`    | `wynkjs g s <name>` | Generate service only         |
-| `wynkjs generate dto <name>`        | `wynkjs g d <name>` | Generate DTO only             |
-| `wynkjs --help`                     | `wynkjs -h`         | Show help                     |
-| `wynkjs --version`                  | `wynkjs -v`         | Show version                  |
+| Command                                 | Alias                   | Description                   |
+| --------------------------------------- | ----------------------- | ----------------------------- |
+| `wynkjs-cli generate module <name>`     | `wynkjs-cli g m <name>` | Generate complete CRUD module |
+| `wynkjs-cli generate controller <name>` | `wynkjs-cli g c <name>` | Generate controller only      |
+| `wynkjs-cli generate service <name>`    | `wynkjs-cli g s <name>` | Generate service only         |
+| `wynkjs-cli generate dto <name>`        | `wynkjs-cli g d <name>` | Generate DTO only             |
+| `wynkjs-cli --help`                     | `wynkjs-cli -h`         | Show help                     |
+| `wynkjs-cli --version`                  | `wynkjs-cli -v`         | Show version                  |
 
 ## 🔧 Naming Conventions
 
 The CLI handles various naming formats:
 
 ```bash
-wynkjs g m product        # → ProductController, ProductService
-wynkjs g m user-profile   # → UserProfileController, UserProfileService
-wynkjs g m orderItem      # → OrderItemController, OrderItemService
+wynkjs-cli g m product        # → ProductController, ProductService
+wynkjs-cli g m user-profile   # → UserProfileController, UserProfileService
+wynkjs-cli g m orderItem      # → OrderItemController, OrderItemService
 ```
 
 Generated files use kebab-case:
@@ -242,7 +242,7 @@ Generated files use kebab-case:
 
 ## 💡 Tips
 
-1. **Generate Module First**: Use `wynkjs g m <name>` to create everything at once
+1. **Generate Module First**: Use `wynkjs-cli g m <name>` to create everything at once
 2. **Customize After**: Edit generated files to add your business logic
 3. **Check index.ts**: Verify controller was added to the controllers array
 4. **Update DTOs**: Modify DTO schemas to match your data model
@@ -262,7 +262,7 @@ cd my-wynkjs-app
 bun add -D wynkjs-cli
 
 # Generate resources
-wynkjs g m product
+wynkjs-cli g m product
 ```
 
 ## 📚 Learn More

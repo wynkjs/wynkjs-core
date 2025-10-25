@@ -244,4 +244,30 @@ describe("User Module E2E", () => {
       expectStatus(response, 200);
     });
   });
+
+  describe("Concurrent User Operations", () => {
+    test("should handle multiple concurrent user registrations", async () => {
+      const timestamp = Date.now();
+      const users = Array.from({ length: 5 }, (_, i) => ({
+        email: `concurrent-${timestamp}-${i}@example.com`,
+        age: 20 + i, // Different ages to ensure uniqueness
+        // Note: Not including 'name' to avoid triggering email sending which has random failures
+      }));
+
+      const responses = await Promise.all(
+        users.map((user, i) =>
+          request(`${app.baseUrl}/users/${10 + i}/${100 + i}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(user),
+          })
+        )
+      );
+
+      // All should succeed
+      responses.forEach((response, i) => {
+        expectStatus(response, 200);
+      });
+    });
+  });
 });

@@ -1,6 +1,6 @@
 {
   "name": "create-wynkjs",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Scaffold a new WynkJS project with best practices",
   "type": "module",
   "bin": {

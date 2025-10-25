@@ -7,7 +7,7 @@
     "test:unit": "bun test src/modules/",
     "test:e2e": "bun test test/e2e/",
     "test:all": "bun test src/modules/ && bun test test/e2e/",
-    "start:dev": "bun  --watch src/index.ts",
+    "dev": "bun  --watch src/index.ts",
     "start": "bun src/index.ts"
   },
   "author": "",

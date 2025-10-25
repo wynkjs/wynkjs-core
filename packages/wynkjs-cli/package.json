@@ -1,10 +1,10 @@
 {
   "name": "wynkjs-cli",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "CLI tool to generate WynkJS modules, controllers, services, and DTOs",
   "type": "module",
   "bin": {
-    "wynkjs": "./dist/index.js"
+    "wynkjs-cli": "./dist/index.js"
   },
   "files": [
     "dist"

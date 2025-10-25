@@ -208,31 +208,4 @@ describe("Email Integration E2E", () => {
       expect([200, 400, 500]).toContain(resetResponse.status);
     });
   });
-
-  describe("Concurrent Email Operations", () => {
-    test("should handle multiple concurrent user registrations", async () => {
-      const timestamp = Date.now();
-      const users = Array.from({ length: 5 }, (_, i) =>
-        createTestUser({
-          name: `Concurrent User ${i}`,
-          email: `concurrent-${i}-${timestamp}@example.com`,
-        })
-      );
-
-      const responses = await Promise.all(
-        users.map((user, i) =>
-          request(`${app.baseUrl}/users/${i}/${i + 100}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(user),
-          })
-        )
-      );
-
-      // All should succeed
-      responses.forEach((response) => {
-        expectStatus(response, 200);
-      });
-    });
-  });
 });

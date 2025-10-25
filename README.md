@@ -349,26 +349,26 @@ bun add -D wynkjs-cli
 
 ```bash
 # Generate complete CRUD module (controller + service + DTO)
-wynkjs generate module product
-# or short: wynkjs g m product
+wynkjs-cli generate module product
+# or short: wynkjs-cli g m product
 
 # Generate controller only (all HTTP methods)
-wynkjs generate controller user
-# or short: wynkjs g c user
+wynkjs-cli generate controller user
+# or short: wynkjs-cli g c user
 
 # Generate service only (all CRUD methods)
-wynkjs generate service order
-# or short: wynkjs g s order
+wynkjs-cli generate service order
+# or short: wynkjs-cli g s order
 
 # Generate DTO only (Create, Update, ID DTOs)
-wynkjs generate dto payment
-# or short: wynkjs g d payment
+wynkjs-cli generate dto payment
+# or short: wynkjs-cli g d payment
 ```
 
 **What it generates:**
 
 ```bash
-wynkjs g m product
+wynkjs-cli g m product
 # Creates:
 # src/modules/product/
 #   ├── product.controller.ts   # Full CRUD controller

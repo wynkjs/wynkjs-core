@@ -34,9 +34,9 @@ export function generateController(name: string) {
 
   console.log(cyan(`\n📝 Next steps:`));
   console.log(
-    cyan(`   1. Generate the service: wynkjs generate service ${name}`)
+    cyan(`   1. Generate the service: wynkjs-cli generate service ${name}`)
   );
-  console.log(cyan(`   2. Generate the DTO: wynkjs generate dto ${name}`));
+  console.log(cyan(`   2. Generate the DTO: wynkjs-cli generate dto ${name}`));
   console.log(
     cyan(`   3. Update the generated files with your business logic\n`)
   );

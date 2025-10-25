@@ -313,12 +313,10 @@ ${prettier ? "- `bun run format` - Format code with Prettier" : ""}
 ## 📚 Documentation
 
 - [WynkJS Documentation](https://github.com/wynkjs/wynkjs-core)
-- [Elysia Documentation](https://elysiajs.com)
 
 ## 🛠️ Built With
 
 - [WynkJS](https://github.com/wynkjs/wynkjs-core) - NestJS-style framework for Bun
-- [Elysia](https://elysiajs.com) - Fast web framework for Bun
 - [TypeScript](https://www.typescriptlang.org/) - Type-safe JavaScript
 ${eslint ? "- [ESLint](https://eslint.org/) - Code linting" : ""}
 ${prettier ? "- [Prettier](https://prettier.io/) - Code formatting" : ""}
@@ -476,6 +474,173 @@ export class UserController {
   writeFileSync(
     join(targetDir, `src/modules/user/user.controller.${ext}`),
     userControllerContent
+  );
+
+  // src/modules/user/user.controller.test.ts
+  const userControllerTestContent = `import { describe, test, expect, beforeEach } from "bun:test";
+import { Test } from "wynkjs";
+import { UserController } from "./user.controller";
+import { UserService } from "./user.service";
+
+describe("UserController", () => {
+  let controller: UserController;
+  let userService: UserService;
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      controllers: [UserController],
+      providers: [UserService],
+    }).compile();
+
+    controller = module.get<UserController>(UserController);
+    userService = module.get<UserService>(UserService);
+  });
+
+  describe("list", () => {
+    test("should return an array of users", async () => {
+      const result = await controller.list();
+      
+      expect(result).toBeDefined();
+      expect(result.users).toBeDefined();
+      expect(Array.isArray(result.users)).toBe(true);
+      expect(result.users.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("create", () => {
+    test("should create a user", async () => {
+      const userData = {
+        name: "Test User",
+        email: "test@example.com",
+        age: 25,
+      };
+
+      const result = await controller.create(userData);
+      
+      expect(result).toBeDefined();
+      expect(result.message).toBe("User created");
+      expect(result.user).toBeDefined();
+      expect(result.user.name).toBe(userData.name);
+      expect(result.user.email).toBe(userData.email);
+    });
+
+    test("should handle user creation without optional fields", async () => {
+      const userData = {
+        name: "Minimal User",
+        email: "minimal@example.com",
+      };
+
+      const result = await controller.create(userData);
+      
+      expect(result).toBeDefined();
+      expect(result.message).toBe("User created");
+    });
+  });
+
+  describe("findOne", () => {
+    test("should return a user by id", async () => {
+      const result = await controller.findOne("1");
+      
+      expect(result).toBeDefined();
+      expect(result.user).toBeDefined();
+      expect(result.user.id).toBe("1");
+    });
+  });
+
+  describe("update", () => {
+    test("should update a user", async () => {
+      const updateData = {
+        email: "updated@example.com",
+        age: 30,
+      };
+
+      const result = await controller.update("1", updateData);
+      
+      expect(result).toBeDefined();
+      expect(result.message).toBe("User updated");
+      expect(result.id).toBe("1");
+    });
+  });
+});
+`;
+
+  writeFileSync(
+    join(targetDir, `src/modules/user/user.controller.test.${ext}`),
+    userControllerTestContent
+  );
+
+  // src/modules/user/user.service.test.ts
+  const userServiceTestContent = `import { describe, test, expect } from "bun:test";
+import { UserService } from "./user.service";
+
+describe("UserService", () => {
+  const service = new UserService();
+
+  describe("getUsers", () => {
+    test("should return an array of users", () => {
+      const users = service.getUsers();
+      
+      expect(users).toBeDefined();
+      expect(Array.isArray(users)).toBe(true);
+      expect(users.length).toBeGreaterThan(0);
+    });
+
+    test("should include Alice, Bob, and Charlie", () => {
+      const users = service.getUsers();
+      
+      expect(users).toContain("Alice");
+      expect(users).toContain("Bob");
+      expect(users).toContain("Charlie");
+    });
+  });
+
+  describe("createUser", () => {
+    test("should create a user with provided data", () => {
+      const userData = {
+        name: "Test User",
+        email: "test@example.com",
+        age: 25,
+      };
+
+      const result = service.createUser(userData);
+      
+      expect(result).toBeDefined();
+      expect(result.name).toBe(userData.name);
+      expect(result.email).toBe(userData.email);
+      expect(result.age).toBe(userData.age);
+    });
+  });
+
+  describe("getUserById", () => {
+    test("should return user data for valid id", () => {
+      const result = service.getUserById("123");
+      
+      expect(result).toBeDefined();
+      expect(result.id).toBe("123");
+      expect(result.name).toBe("Alice");
+    });
+  });
+
+  describe("updateUser", () => {
+    test("should return updated user data", () => {
+      const updateData = {
+        email: "updated@example.com",
+        age: 30,
+      };
+
+      const result = service.updateUser("123", updateData);
+      
+      expect(result).toBeDefined();
+      expect(result.email).toBe(updateData.email);
+      expect(result.age).toBe(updateData.age);
+    });
+  });
+});
+`;
+
+  writeFileSync(
+    join(targetDir, `src/modules/user/user.service.test.${ext}`),
+    userServiceTestContent
   );
 
   // src/index.ts
@@ -679,7 +844,11 @@ describe("User E2E Tests", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(invalidUser),
       });
-      expect(response.status).toBe(422);
+      expectStatus(response, 400);
+      
+      const data = await parseJson(response);
+      expect(data.message).toBe("Validation failed");
+      expect(data.errors).toBeDefined();
     });
 
     test("should reject user creation with missing name", async () => {
@@ -690,7 +859,11 @@ describe("User E2E Tests", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(invalidUser),
       });
-      expect(response.status).toBe(422);
+      expectStatus(response, 400);
+      
+      const data = await parseJson(response);
+      expect(data.message).toBe("Validation failed");
+      expect(data.errors).toBeDefined();
     });
   });
 
