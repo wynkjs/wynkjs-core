@@ -528,6 +528,7 @@ describe("UserController", () => {
       const userData = {
         name: "Minimal User",
         email: "minimal@example.com",
+        age: 18,
       };
 
       const result = await controller.create(userData);
@@ -545,20 +546,11 @@ describe("UserController", () => {
       expect(result.user).toBeDefined();
       expect(result.user.id).toBe("1");
     });
-  });
 
-  describe("update", () => {
-    test("should update a user", async () => {
-      const updateData = {
-        email: "updated@example.com",
-        age: 30,
-      };
-
-      const result = await controller.update("1", updateData);
-      
-      expect(result).toBeDefined();
-      expect(result.message).toBe("User updated");
-      expect(result.id).toBe("1");
+    test("should throw NotFoundException for non-existent user", async () => {
+      expect(async () => {
+        await controller.findOne("non-existent-id");
+      }).toThrow();
     });
   });
 });
@@ -576,25 +568,24 @@ import { UserService } from "./user.service";
 describe("UserService", () => {
   const service = new UserService();
 
-  describe("getUsers", () => {
+  describe("findAll", () => {
     test("should return an array of users", () => {
-      const users = service.getUsers();
+      const users = service.findAll();
       
       expect(users).toBeDefined();
       expect(Array.isArray(users)).toBe(true);
       expect(users.length).toBeGreaterThan(0);
     });
 
-    test("should include Alice, Bob, and Charlie", () => {
-      const users = service.getUsers();
+    test("should include Alice and Bob", () => {
+      const users = service.findAll();
       
-      expect(users).toContain("Alice");
-      expect(users).toContain("Bob");
-      expect(users).toContain("Charlie");
+      expect(users.some(u => u.name === "Alice")).toBe(true);
+      expect(users.some(u => u.name === "Bob")).toBe(true);
     });
   });
 
-  describe("createUser", () => {
+  describe("create", () => {
     test("should create a user with provided data", () => {
       const userData = {
         name: "Test User",
@@ -602,37 +593,29 @@ describe("UserService", () => {
         age: 25,
       };
 
-      const result = service.createUser(userData);
+      const result = service.create(userData);
       
       expect(result).toBeDefined();
       expect(result.name).toBe(userData.name);
       expect(result.email).toBe(userData.email);
       expect(result.age).toBe(userData.age);
+      expect(result.id).toBeDefined();
     });
   });
 
-  describe("getUserById", () => {
+  describe("findById", () => {
     test("should return user data for valid id", () => {
-      const result = service.getUserById("123");
+      const result = service.findById("1");
       
       expect(result).toBeDefined();
-      expect(result.id).toBe("123");
-      expect(result.name).toBe("Alice");
+      expect(result?.id).toBe("1");
+      expect(result?.name).toBe("Alice");
     });
-  });
 
-  describe("updateUser", () => {
-    test("should return updated user data", () => {
-      const updateData = {
-        email: "updated@example.com",
-        age: 30,
-      };
-
-      const result = service.updateUser("123", updateData);
+    test("should return undefined for non-existent id", () => {
+      const result = service.findById("non-existent-id");
       
-      expect(result).toBeDefined();
-      expect(result.email).toBe(updateData.email);
-      expect(result.age).toBe(updateData.age);
+      expect(result).toBeUndefined();
     });
   });
 });
