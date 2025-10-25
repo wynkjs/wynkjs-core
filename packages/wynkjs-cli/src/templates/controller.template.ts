@@ -6,7 +6,8 @@ export function generateControllerTemplate(name: string): string {
   const serviceName = `${entityName}Service`;
   const serviceVarName =
     entityName.charAt(0).toLowerCase() + entityName.slice(1) + "Service";
-  const dtoImport = `../dto/${name}.dto.js`;
+  const dtoImport = `./${name}.dto.js`;
+  const serviceImport = `./${name}.service.js`;
 
   return `import {
   Controller,
@@ -23,7 +24,7 @@ export function generateControllerTemplate(name: string): string {
 } from "wynkjs";
 import { Create${entityName}DTO, Update${entityName}DTO, ${entityName}IdDto } from "${dtoImport}";
 import type { Create${entityName}Type, Update${entityName}Type } from "${dtoImport}";
-import { ${serviceName} } from "../services/${name}.service.js";
+import { ${serviceName} } from "${serviceImport}";
 
 @Injectable()
 @Controller("/${name}")

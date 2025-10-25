@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-10-25
+
+### Added
+
+- 🧪 **Testing Module** - Built-in testing utilities similar to @nestjs/testing
+  - `Test.createTestingModule()` - Create isolated test modules with DI
+  - `MockFactory` - Create mocks and spies for testing
+  - Test utilities for creating mock requests, responses, and execution contexts
+  - Full integration with Bun's built-in test runner
+- 🧪 **Automatic Test Generation** - wynkjs-cli now generates test files
+  - Controller tests with full CRUD coverage
+  - Service tests with comprehensive test cases
+  - Tests are generated alongside controllers and services
+  - Uses Bun's built-in test runner (no Jest needed!)
+
+### Changed
+
+- 📦 **wynkjs-cli**: Updated module generator to create flat structure (`modules/user/*.ts`)
+- 📦 **wynkjs-cli**: Controller and service imports updated for flat structure
+- 📝 Updated examples to show testing patterns
+
 ## [1.0.2] - 2025-10-22
 
 ### Added

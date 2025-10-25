@@ -1,6 +1,6 @@
 {
   "name": "wynkjs",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A high-performance TypeScript framework built on Elysia for Bun with NestJS-style decorators - 20x faster than Express",
   "main": "dist/index.js",
   "module": "dist/index.js",

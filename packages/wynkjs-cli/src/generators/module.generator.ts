@@ -5,6 +5,9 @@ import { loadConfig, toKebabCase, toPascalCase } from "../utils.js";
 import { generateControllerTemplate } from "../templates/controller.template.js";
 import { generateServiceTemplate } from "../templates/service.template.js";
 import { generateDtoTemplate } from "../templates/dto.template.js";
+import { generateControllerTestTemplate } from "../templates/controller.test.template.js";
+import { generateServiceTestTemplate } from "../templates/service.test.template.js";
+import { e2eTestTemplate } from "../templates/e2e.test.template.js";
 
 export function generateModule(name: string) {
   const kebabName = toKebabCase(name);
@@ -13,45 +16,71 @@ export function generateModule(name: string) {
 
   console.log(cyan(`\n📦 Generating module: ${kebabName}\n`));
 
-  // Create module directory structure
-  const controllersDir = join(modulePath, "controllers");
-  const servicesDir = join(modulePath, "services");
-  const dtoDir = join(modulePath, "dto");
-
-  mkdirSync(controllersDir, { recursive: true });
-  mkdirSync(servicesDir, { recursive: true });
-  mkdirSync(dtoDir, { recursive: true });
+  // Create module directory (flat structure)
+  mkdirSync(modulePath, { recursive: true });
 
   // Generate DTO
   const dtoContent = generateDtoTemplate(kebabName);
-  const dtoPath = join(dtoDir, `${kebabName}.dto.ts`);
+  const dtoPath = join(modulePath, `${kebabName}.dto.ts`);
   writeFileSync(dtoPath, dtoContent);
   console.log(green(`✔ Generated DTO: ${kebabName}.dto.ts`));
 
   // Generate Service
   const serviceContent = generateServiceTemplate(kebabName);
-  const servicePath = join(servicesDir, `${kebabName}.service.ts`);
+  const servicePath = join(modulePath, `${kebabName}.service.ts`);
   writeFileSync(servicePath, serviceContent);
   console.log(green(`✔ Generated service: ${kebabName}.service.ts`));
 
+  // Generate Service Test
+  const serviceTestContent = generateServiceTestTemplate(kebabName);
+  const serviceTestPath = join(modulePath, `${kebabName}.service.test.ts`);
+  writeFileSync(serviceTestPath, serviceTestContent);
+  console.log(green(`✔ Generated service test: ${kebabName}.service.test.ts`));
+
   // Generate Controller
   const controllerContent = generateControllerTemplate(kebabName);
-  const controllerPath = join(controllersDir, `${kebabName}.controller.ts`);
+  const controllerPath = join(modulePath, `${kebabName}.controller.ts`);
   writeFileSync(controllerPath, controllerContent);
   console.log(green(`✔ Generated controller: ${kebabName}.controller.ts`));
+
+  // Generate Controller Test
+  const controllerTestContent = generateControllerTestTemplate(kebabName);
+  const controllerTestPath = join(
+    modulePath,
+    `${kebabName}.controller.test.ts`
+  );
+  writeFileSync(controllerTestPath, controllerTestContent);
+  console.log(
+    green(`✔ Generated controller test: ${kebabName}.controller.test.ts`)
+  );
+
+  // Generate E2E Test
+  const e2eDir = join(process.cwd(), "test", "e2e");
+  mkdirSync(e2eDir, { recursive: true });
+
+  const e2eTestContent = e2eTestTemplate(kebabName);
+  const e2eTestPath = join(e2eDir, `${kebabName}.e2e.test.ts`);
+  writeFileSync(e2eTestPath, e2eTestContent);
+  console.log(green(`✔ Generated E2E test: test/e2e/${kebabName}.e2e.test.ts`));
 
   console.log(green(`\n✨ Module ${kebabName} generated successfully!\n`));
   console.log(cyan(`📁 Module structure:`));
   console.log(cyan(`   ${modulePath}/`));
-  console.log(cyan(`   ├── controllers/`));
-  console.log(cyan(`   │   └── ${kebabName}.controller.ts`));
-  console.log(cyan(`   ├── services/`));
-  console.log(cyan(`   │   └── ${kebabName}.service.ts`));
-  console.log(cyan(`   └── dto/`));
-  console.log(cyan(`       └── ${kebabName}.dto.ts`));
+  console.log(cyan(`   ├── ${kebabName}.controller.ts`));
+  console.log(cyan(`   ├── ${kebabName}.controller.test.ts`));
+  console.log(cyan(`   ├── ${kebabName}.service.ts`));
+  console.log(cyan(`   ├── ${kebabName}.service.test.ts`));
+  console.log(cyan(`   └── ${kebabName}.dto.ts`));
+  console.log();
+  console.log(cyan(`   test/e2e/`));
+  console.log(cyan(`   └── ${kebabName}.e2e.test.ts`));
   console.log();
   console.log(cyan(`📝 Don't forget to:`));
   console.log(cyan(`   1. Import the controller in src/index.ts`));
   console.log(cyan(`   2. Add business logic to the service`));
-  console.log(cyan(`   3. Update DTOs with your schema\n`));
+  console.log(cyan(`   3. Update DTOs with your schema`));
+  console.log(cyan(`   4. Run unit tests: bun test ${modulePath}`));
+  console.log(
+    cyan(`   5. Run E2E tests: bun test test/e2e/${kebabName}.e2e.test.ts\n`)
+  );
 }

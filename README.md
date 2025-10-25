@@ -371,12 +371,9 @@ wynkjs generate dto payment
 wynkjs g m product
 # Creates:
 # src/modules/product/
-#   ├── controllers/
-#   │   └── product.controller.ts   # Full CRUD controller
-#   ├── services/
-#   │   └── product.service.ts      # All CRUD methods
-#   └── dto/
-#       └── product.dto.ts           # Validation schemas
+#   ├── product.controller.ts   # Full CRUD controller
+#   ├── product.service.ts      # All CRUD methods
+#   └── product.dto.ts           # Validation schemas
 ```
 
 **Auto-imports:** Controllers are automatically imported and added to `src/index.ts`!
@@ -597,8 +594,6 @@ export class UserService {
 
 WynkJS provides automatic request validation with **full IntelliSense support** and customizable error formats:
 
-> 💡 **New in v1.0.2**: Type `DTO.` and get full autocomplete! See [INTELLISENSE_GUIDE.md](./docs/INTELLISENSE_GUIDE.md)
-
 ```typescript
 // user.dto.ts
 import { DTO, CommonDTO } from "wynkjs";
@@ -699,7 +694,7 @@ const app = WynkFactory.create({
 });
 ```
 
-**See [VALIDATION_FORMATTERS.md](./VALIDATION_FORMATTERS.md) for all available error formats**
+**See [VALIDATION_FORMATTERS.md](./docs-wynkjs/VALIDATION_FORMATTERS.md) for all available error formats**
 
 ### 🚫 Exception Handling
 
@@ -792,21 +787,37 @@ export class ApiController {
 
 ## 🏗️ Project Structure
 
+Recommended project structure for WynkJS applications:
+
 ```
 my-wynk-app/
 ├── src/
-│   ├── controllers/
-│   │   └── user.controller.ts
-│   ├── services/
-│   │   └── email.service.ts
-│   ├── dto/
-│   │   └── user.dto.ts
+│   ├── modules/
+│   │   ├── user/
+│   │   │   ├── user.controller.ts
+│   │   │   ├── user.service.ts
+│   │   │   └── user.dto.ts
+│   │   └── product/
+│   │       ├── product.controller.ts
+│   │       ├── product.service.ts
+│   │       └── product.dto.ts
 │   ├── exceptions/
-│   │   └── email.exceptions.ts
+│   │   └── custom.exceptions.ts
+│   ├── guards/
+│   │   └── auth.guard.ts
+│   ├── filters/
+│   │   └── http-exception.filter.ts
 │   └── index.ts
 ├── package.json
 └── tsconfig.json
 ```
+
+**Module-based Organization:**
+
+- Each feature/domain lives in its own module folder
+- Controllers, services, and DTOs are co-located
+- Easy to navigate and maintain
+- Generated automatically by `wynkjs-cli`
 
 ---
 
@@ -1049,12 +1060,11 @@ npx create-wynkjs
 ```
 my-wynkjs-app/
 ├── src/
-│   ├── controllers/
-│   │   └── user.controller.ts
-│   ├── services/
-│   │   └── user.service.ts
-│   ├── dto/
-│   │   └── user.dto.ts
+│   ├── modules/
+│   │   └── user/
+│   │       ├── user.controller.ts
+│   │       ├── user.service.ts
+│   │       └── user.dto.ts
 │   └── index.ts
 ├── .eslintrc.json
 ├── .prettierrc
@@ -1078,8 +1088,7 @@ my-wynkjs-app/
 
 - 📚 [Full Documentation](https://github.com/wynkjs/wynkjs-core)
 - 🚀 [CLI Tool (create-wynkjs)](./packages/create-wynkjs/README.md)
-- 💡 [IntelliSense Guide](./docs/INTELLISENSE_GUIDE.md)
-- 🎨 [Validation Formatters](./VALIDATION_FORMATTERS.md)
+- 🎨 [Validation Formatters](./docs-wynkjs/VALIDATION_FORMATTERS.md)
 - 📝 [Changelog](./CHANGELOG.md)
 - 🐛 [Report Issues](https://github.com/wynkjs/wynkjs-core/issues)
 
@@ -1087,83 +1096,166 @@ my-wynkjs-app/
 
 ## 🤝 Contributing
 
+We welcome contributions from the community! Whether you're fixing bugs, improving documentation, or proposing new features, your help is appreciated.
+
+### 🐛 Reporting Issues
+
+If you find a bug or have a feature request:
+
+1. **Check existing issues** to avoid duplicates
+2. **Create a new issue** with a clear title and description
+3. **Provide details**: Steps to reproduce, expected behavior, actual behavior
+4. **Include environment info**: Bun version, OS, WynkJS version
+
+[Report an issue →](https://github.com/wynkjs/wynkjs-core/issues)
+
+### 💡 Contributing Code
+
+#### Getting Started
+
+1. **Fork the repository**
+
+   ```bash
+   # Fork on GitHub, then clone your fork
+   git clone https://github.com/YOUR_USERNAME/wynkjs-core.git
+   cd wynkjs-core
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   bun install
+   ```
+
+3. **Build the packages**
+
+   ```bash
+   # Build main framework
+   bun run build
+
+   # Build CLI tools
+   cd packages/create-wynkjs && bun run build
+   cd ../wynkjs-cli && bun run build
+   ```
+
+4. **Create a branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   # or
+   git checkout -b fix/bug-description
+   ```
+
+#### Development Workflow
+
+1. **Make your changes** in the appropriate package:
+
+   - `core/` - Core framework decorators and utilities
+   - `packages/create-wynkjs/` - Project scaffolding CLI
+   - `packages/wynkjs-cli/` - Code generator CLI
+
+2. **Test your changes**
+
+   ```bash
+   # Test in the example project
+   cd example
+   bun run dev
+
+   # Test CLI generation
+   cd /tmp && bunx /path/to/wynkjs-core/packages/create-wynkjs
+   ```
+
+3. **Build all packages**
+
+   ```bash
+   # From project root
+   bun run build
+   cd packages/create-wynkjs && bun run build
+   cd ../wynkjs-cli && bun run build
+   ```
+
+4. **Commit your changes**
+
+   ```bash
+   git add .
+   git commit -m "feat: add new feature"
+   # or
+   git commit -m "fix: resolve issue with decorators"
+   ```
+
+   **Commit Convention:**
+
+   - `feat:` - New feature
+   - `fix:` - Bug fix
+   - `docs:` - Documentation changes
+   - `refactor:` - Code refactoring
+   - `test:` - Adding tests
+   - `chore:` - Maintenance tasks
+
+5. **Push and create a Pull Request**
+
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+   Then open a Pull Request on GitHub with:
+
+   - Clear description of changes
+   - Link to related issues
+   - Screenshots/examples if applicable
+
+#### Code Style
+
+- **TypeScript**: Strict mode enabled
+- **Formatting**: Use Prettier (run `bun run format` if available)
+- **Linting**: Follow ESLint rules
+- **Naming**:
+  - PascalCase for classes and interfaces
+  - camelCase for functions and variables
+  - kebab-case for file names
+
+#### Testing Guidelines
+
+- Test your changes in the `example/` directory
+- Ensure existing examples still work
+- Add new examples for new features
+- Test CLI tools in a fresh directory
+
+### 📝 Documentation
+
+Documentation improvements are always welcome!
+
+- **README updates**: Keep examples current and clear
+- **Code comments**: Add JSDoc comments for public APIs
+- **Guides**: Create helpful guides in `docs-wynkjs/`
+- **Examples**: Add real-world usage examples
+
+### 🚀 Release Process (Maintainers)
+
+1. Update `CHANGELOG.md` with changes
+2. Bump version in `package.json` files
+3. Build all packages
+4. Commit and tag the release
+5. Publish to npm:
+   ```bash
+   npm publish --access public
+   cd packages/create-wynkjs && npm publish --access public
+   cd ../wynkjs-cli && npm publish --access public
+   ```
+
+### 💬 Community
+
+- **GitHub Discussions**: Ask questions and share ideas
+- **Discord**: (Coming soon) Join our community chat
+- **Twitter**: Follow [@wynkjs](https://twitter.com/wynkjs) for updates
+
+### 📜 License
+
+By contributing, you agree that your contributions will be licensed under the MIT License.
+
+---
+
+**Thank you for contributing to WynkJS! 🎉**
+
 ```
 
----
-
-## 🔧 API Reference
-
-### WynkFramework.create(options)
-
-Create a new WynkJS application.
-
-**Options:**
-
-- `controllers: Array<Class>` - Array of controller classes
-- `globalGuards?: Array<Guard>` - Global guards (optional)
-- `globalInterceptors?: Array<Interceptor>` - Global interceptors (optional)
-- `globalPipes?: Array<Pipe>` - Global pipes (optional)
-- `globalFilters?: Array<Filter>` - Global exception filters (optional)
-
-**Returns:** Promise<WynkFramework>
-
-### app.listen(port, callback?)
-
-Start the server on the specified port.
-
----
-
-## 🎯 Performance
-
-WynkJS is built on Elysia, which is **20x faster than Express**:
-
-| Framework  | Requests/sec | Latency (avg) |
-| ---------- | ------------ | ------------- |
-| **WynkJS** | **~250,000** | **~0.4ms**    |
-| Elysia     | ~250,000     | ~0.4ms        |
-| Fastify    | ~45,000      | ~2.2ms        |
-| Express    | ~12,000      | ~8.3ms        |
-
-_Benchmarks may vary based on hardware and configuration_
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
----
-
-## 📄 License
-
-MIT © Alam Jamal
-
----
-
-## 🔗 Links
-
-- [GitHub Repository](https://github.com/alamjamal/wynkjs)
-- [Issue Tracker](https://github.com/alamjamal/wynkjs/issues)
-- [Elysia Documentation](https://elysiajs.com/)
-- [TypeScript Decorators](https://www.typescriptlang.org/docs/handbook/decorators.html)
-
----
-
-## 💖 Acknowledgments
-
-Built with:
-
-- [Elysia](https://elysiajs.com/) - The fast web framework
-- [tsyringe](https://github.com/microsoft/tsyringe) - Dependency injection
-- [TypeScript](https://www.typescriptlang.org/) - Type safety
-
----
-
-<div align="center">
-
-**[⬆ back to top](#-wynkjs)**
-
-Made with ❤️ by [Alam Jamal](https://github.com/alamjamal)
-
-</div>
 ```

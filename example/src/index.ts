@@ -10,8 +10,7 @@ import { GlobalExceptionFilter, DatabaseExceptionFilter } from "wynkjs";
 import { UserController } from "./modules/user/user.controller";
 import { ValidationExceptionFilter } from "./filter/validation.filter";
 import { CustomExceptionFilter } from "./filter/custom.filter";
-import { CartController } from "./modules/cart/controllers/cart.controller";
-import { ProductController } from "./modules/product/controllers/product.controller";
+import { ProductController } from "./modules/product/product.controller";
 /**
  * Bootstrap WynkJS Application
  * Example of using WynkJS framework with Database Registry
@@ -27,7 +26,7 @@ async function bootstrap() {
   // Create WynkJS application with all controllers
   // Option 1: Default format { field: [messages] }
   const app = WynkFactory.create({
-    controllers: [UserController, CartController, ProductController],
+    controllers: [UserController, ProductController],
     cors: true,
     logger: true,
     validationErrorFormatter: new DetailedErrorFormatter(),

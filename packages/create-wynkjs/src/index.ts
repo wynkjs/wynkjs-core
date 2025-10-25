@@ -108,9 +108,8 @@ function createProjectStructure(
 
   // Create directories
   mkdirSync(join(targetDir, "src"), { recursive: true });
-  mkdirSync(join(targetDir, "src/controllers"), { recursive: true });
-  mkdirSync(join(targetDir, "src/services"), { recursive: true });
-  mkdirSync(join(targetDir, "src/dto"), { recursive: true });
+  mkdirSync(join(targetDir, "src/modules/user"), { recursive: true });
+  mkdirSync(join(targetDir, "test/e2e"), { recursive: true });
 
   // package.json
   const packageJson = {
@@ -120,14 +119,20 @@ function createProjectStructure(
     scripts: {
       dev: "bun --watch src/index.ts",
       build: "tsc",
+      "build:start": "bun run build && bun dist/index.js",
       start: "bun src/index.ts",
+      test: "bun test src/modules/",
+      "test:unit": "bun test src/modules/",
+      "test:e2e": "bun test test/e2e/",
+      "test:e2e:watch": "bun test --watch test/e2e/",
+      "test:all": "bun test src/modules/ && bun test test/e2e/",
+      "test:watch": "bun test --watch",
       ...(eslint && { lint: "eslint src/**/*.ts" }),
       ...(prettier && { format: "prettier --write src/**/*.ts" }),
       ...(eslint && prettier && { "lint:fix": "eslint src/**/*.ts --fix" }),
     },
     dependencies: {
-      wynkjs: "^1.0.2",
-      elysia: "^1.0.0",
+      wynkjs: "^1.0.3",
     },
     devDependencies: {
       typescript: "^5.0.0",
@@ -160,7 +165,6 @@ function createProjectStructure(
       moduleResolution: "bundler",
       lib: ["ES2022"],
       outDir: "./dist",
-      rootDir: "./src",
       strict: true,
       esModuleInterop: true,
       skipLibCheck: true,
@@ -172,7 +176,7 @@ function createProjectStructure(
       declarationMap: true,
       sourceMap: true,
     },
-    include: ["src/**/*.ts"],
+    include: ["src/**/*.ts", "test/**/*.ts"],
     exclude: ["node_modules", "dist"],
   };
 
@@ -281,13 +285,17 @@ bun run start
 
 \`\`\`
 src/
-├── controllers/     # API controllers
-│   └── user.controller.ts
-├── services/        # Business logic
-│   └── user.service.ts
-├── dto/             # Data Transfer Objects
-│   └── user.dto.ts
+├── modules/
+│   └── user/
+│       ├── user.controller.ts
+│       ├── user.service.ts
+│       └── user.dto.ts
 └── index.ts         # Application entry point
+
+test/
+└── e2e/
+    ├── setup.ts     # E2E test utilities
+    └── user.e2e.test.ts
 \`\`\`
 
 ## 🔧 Available Scripts
@@ -295,6 +303,10 @@ src/
 - \`bun run dev\` - Start development server with hot reload
 - \`bun run start\` - Start production server
 - \`bun run build\` - Build TypeScript to JavaScript
+- \`bun test\` - Run unit tests
+- \`bun test:unit\` - Run unit tests
+- \`bun test:e2e\` - Run E2E tests
+- \`bun test:all\` - Run all tests
 ${eslint ? "- `bun run lint` - Run ESLint" : ""}
 ${prettier ? "- `bun run format` - Format code with Prettier" : ""}
 
@@ -345,13 +357,16 @@ bunx lint-staged
 
   // Source files (always TypeScript)
   createSourceFiles(targetDir);
+
+  // E2E test files
+  createE2ETestFiles(targetDir);
 }
 
 function createSourceFiles(targetDir: string) {
   // WynkJS is TypeScript-first, always use .ts extension
   const ext = "ts";
 
-  // src/dto/user.dto.ts
+  // src/modules/user/user.dto.ts
   const userDtoContent = `import { DTO, CommonDTO } from "wynkjs";
 
 export const CreateUserDTO = DTO.Strict({
@@ -363,7 +378,7 @@ export const CreateUserDTO = DTO.Strict({
 export interface CreateUserType {
   name: string;
   email: string;
-  age?: number;
+  age: number;
 }
 
 export const UserIdDto = DTO.Object({
@@ -371,28 +386,38 @@ export const UserIdDto = DTO.Object({
 });
 `;
 
-  writeFileSync(join(targetDir, `src/dto/user.dto.${ext}`), userDtoContent);
+  writeFileSync(
+    join(targetDir, `src/modules/user/user.dto.${ext}`),
+    userDtoContent
+  );
 
-  // src/services/user.service.ts
+  // src/modules/user/user.service.ts
   const userServiceContent = `import { Injectable } from "wynkjs";
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  age: number;
+}
 
 @Injectable()
 export class UserService {
-  private users = [
+  private users: User[] = [
     { id: "1", name: "Alice", email: "alice@example.com", age: 25 },
     { id: "2", name: "Bob", email: "bob@example.com", age: 30 },
   ];
 
-  findAll() {
+  findAll(): User[] {
     return this.users;
   }
 
-  findById(id: string) {
+  findById(id: string): User | undefined {
     return this.users.find((u) => u.id === id);
   }
 
-  create(data: { name: string; email: string; age?: number }) {
-    const user = { id: Date.now().toString(), ...data };
+  create(data: { name: string; email: string; age: number }): User {
+    const user: User = { id: Date.now().toString(), ...data };
     this.users.push(user);
     return user;
   }
@@ -400,11 +425,11 @@ export class UserService {
 `;
 
   writeFileSync(
-    join(targetDir, `src/services/user.service.${ext}`),
+    join(targetDir, `src/modules/user/user.service.${ext}`),
     userServiceContent
   );
 
-  // src/controllers/user.controller.ts
+  // src/modules/user/user.controller.ts
   const userControllerContent = `import {
   Controller,
   Get,
@@ -414,9 +439,9 @@ export class UserService {
   Injectable,
   NotFoundException,
 } from "wynkjs";
-import { CreateUserDTO, UserIdDto } from "../dto/user.dto.js";
-import type { CreateUserType } from "../dto/user.dto.js";
-import { UserService } from "../services/user.service.js";
+import { CreateUserDTO, UserIdDto } from "./user.dto.js";
+import type { CreateUserType } from "./user.dto.js";
+import { UserService } from "./user.service.js";
 
 @Injectable()
 @Controller("/users")
@@ -449,13 +474,13 @@ export class UserController {
 `;
 
   writeFileSync(
-    join(targetDir, `src/controllers/user.controller.${ext}`),
+    join(targetDir, `src/modules/user/user.controller.${ext}`),
     userControllerContent
   );
 
   // src/index.ts
   const indexContent = `import { WynkFactory } from "wynkjs";
-import { UserController } from "./controllers/user.controller.js";
+import { UserController } from "./modules/user/user.controller.js";
 
 const app = WynkFactory.create({
   controllers: [UserController],
@@ -463,7 +488,7 @@ const app = WynkFactory.create({
 
 const PORT = process.env.PORT || 3000;
 
-await app.listen(PORT);
+await app.listen(Number(PORT));
 
 console.log(\`🚀 WynkJS server running on http://localhost:\${PORT}\`);
 console.log(\`📝 API endpoints:\`);
@@ -473,6 +498,255 @@ console.log(\`   GET    http://localhost:\${PORT}/users/:id\`);
 `;
 
   writeFileSync(join(targetDir, `src/index.${ext}`), indexContent);
+}
+
+function createE2ETestFiles(targetDir: string) {
+  // test/e2e/setup.ts
+  const setupContent = `import { WynkFactory } from "wynkjs";
+
+export interface TestApp {
+  baseUrl: string;
+  stop: () => Promise<void>;
+}
+
+let currentServer: any = null;
+
+/**
+ * Start the WynkJS test server on a separate port
+ * @param controllersOrPort - Either an array of controllers or a port number
+ * @param portParam - Port number (only used if first param is controllers array)
+ */
+export async function startTestApp(
+  controllersOrPort: any[] | number = 3001,
+  portParam?: number
+): Promise<TestApp> {
+  // Stop existing server if running
+  if (currentServer) {
+    await stopTestApp();
+  }
+
+  // Parse parameters
+  let controllers: any[];
+  let port: number;
+
+  if (Array.isArray(controllersOrPort)) {
+    controllers = controllersOrPort;
+    port = portParam || 3001;
+  } else {
+    // If only port passed, import and use UserController
+    const { UserController } = await import("./modules/user/user.controller.js");
+    controllers = [UserController];
+    port = controllersOrPort;
+  }
+
+  const app = WynkFactory.create({ controllers });
+  currentServer = await app.listen(port);
+
+  // Wait for server to be ready
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  return {
+    baseUrl: \`http://localhost:\${port}\`,
+    stop: async () => {
+      if (currentServer) {
+        await currentServer.stop();
+        currentServer = null;
+      }
+    },
+  };
+}
+
+/**
+ * Stop the test server
+ */
+export async function stopTestApp(app?: TestApp): Promise<void> {
+  if (currentServer) {
+    await currentServer.stop();
+    currentServer = null;
+  }
+  if (app?.stop) {
+    await app.stop();
+  }
+}
+
+/**
+ * Make an HTTP request to the test server
+ */
+export async function request(
+  url: string,
+  options?: RequestInit
+): Promise<Response> {
+  return fetch(url, options);
+}
+
+/**
+ * Parse JSON response safely
+ */
+export async function parseJson(response: Response): Promise<any> {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: "Failed to parse JSON", body: text };
+  }
+}
+
+/**
+ * Assert response status
+ */
+export function expectStatus(response: Response, expectedStatus: number) {
+  if (response.status !== expectedStatus) {
+    throw new Error(
+      \`Expected status \${expectedStatus}, got \${response.status}\`
+    );
+  }
+}
+
+/**
+ * Create test user for testing
+ */
+export function createTestUser(overrides?: Partial<any>) {
+  return {
+    name: "Test User",
+    email: "test@example.com",
+    age: 25,
+    ...overrides,
+  };
+}
+`;
+
+  writeFileSync(join(targetDir, "test/e2e/setup.ts"), setupContent);
+
+  // test/e2e/user.e2e.test.ts
+  const userE2EContent = `import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import {
+  startTestApp,
+  stopTestApp,
+  request,
+  parseJson,
+  expectStatus,
+  createTestUser,
+  type TestApp,
+} from "./setup";
+import { UserController } from "../../src/modules/user/user.controller";
+
+describe("User E2E Tests", () => {
+  let app: TestApp;
+
+  beforeAll(async () => {
+    app = await startTestApp([UserController]);
+  });
+
+  afterAll(async () => {
+    await stopTestApp(app);
+  });
+
+  describe("GET /users", () => {
+    test("should list all users", async () => {
+      const response = await request(\`\${app.baseUrl}/users\`);
+      expectStatus(response, 200);
+
+      const data = await parseJson(response);
+      expect(data).toHaveProperty("users");
+      expect(Array.isArray(data.users)).toBe(true);
+      expect(data.users.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("POST /users", () => {
+    test("should create a new user with valid data", async () => {
+      const newUser = createTestUser({ name: "John Doe", email: "john@example.com" });
+
+      const response = await request(\`\${app.baseUrl}/users\`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newUser),
+      });
+      expectStatus(response, 200);
+
+      const data = await parseJson(response);
+      expect(data).toHaveProperty("message", "User created");
+      expect(data).toHaveProperty("user");
+      expect(data.user.name).toBe("John Doe");
+      expect(data.user.email).toBe("john@example.com");
+    });
+
+    test("should reject user creation with invalid email", async () => {
+      const invalidUser = createTestUser({ email: "invalid-email" });
+
+      const response = await request(\`\${app.baseUrl}/users\`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invalidUser),
+      });
+      expect(response.status).toBe(422);
+    });
+
+    test("should reject user creation with missing name", async () => {
+      const invalidUser = { email: "test@example.com", age: 25 };
+
+      const response = await request(\`\${app.baseUrl}/users\`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invalidUser),
+      });
+      expect(response.status).toBe(422);
+    });
+  });
+
+  describe("GET /users/:id", () => {
+    test("should get user by id", async () => {
+      const response = await request(\`\${app.baseUrl}/users/1\`);
+      expectStatus(response, 200);
+
+      const data = await parseJson(response);
+      expect(data).toHaveProperty("user");
+      expect(data.user.id).toBe("1");
+    });
+
+    test("should return 404 for non-existent user", async () => {
+      const response = await request(\`\${app.baseUrl}/users/999999\`);
+      expectStatus(response, 404);
+
+      const data = await parseJson(response);
+      expect(data).toHaveProperty("message", "User not found");
+    });
+  });
+
+  describe("Full User Lifecycle", () => {
+    test("should create, retrieve, and verify user", async () => {
+      // Create user
+      const newUser = createTestUser({ 
+        name: "Lifecycle Test", 
+        email: "lifecycle@example.com",
+        age: 28
+      });
+
+      const createResponse = await request(\`\${app.baseUrl}/users\`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newUser),
+      });
+      expectStatus(createResponse, 200);
+
+      const createData = await parseJson(createResponse);
+      expect(createData.user).toBeDefined();
+      const userId = createData.user.id;
+
+      // Retrieve user
+      const getResponse = await request(\`\${app.baseUrl}/users/\${userId}\`);
+      expectStatus(getResponse, 200);
+
+      const getData = await parseJson(getResponse);
+      expect(getData.user.id).toBe(userId);
+      expect(getData.user.name).toBe("Lifecycle Test");
+      expect(getData.user.email).toBe("lifecycle@example.com");
+    });
+  });
+});
+`;
+
+  writeFileSync(join(targetDir, "test/e2e/user.e2e.test.ts"), userE2EContent);
 }
 
 // Handle process exit

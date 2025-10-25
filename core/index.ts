@@ -70,6 +70,9 @@ export * from "./dto";
 // Application Factory
 export * from "./factory";
 
+// Testing Module
+export * from "./testing";
+
 /**
  * Framework version
  */

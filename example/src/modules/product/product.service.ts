@@ -1,6 +1,6 @@
 import { Injectable } from "wynkjs";
 
-export interface Cart {
+export interface Product {
   id: string;
   createdAt: Date;
   updatedAt: Date;
@@ -8,19 +8,19 @@ export interface Cart {
 }
 
 @Injectable()
-export class CartService {
-  private items: Cart[] = [];
+export class ProductService {
+  private items: Product[] = [];
 
-  findAll(): Cart[] {
+  findAll(): Product[] {
     return this.items;
   }
 
-  findById(id: string): Cart | undefined {
+  findById(id: string): Product | undefined {
     return this.items.find((item) => item.id === id);
   }
 
-  create(data: Omit<Cart, "id" | "createdAt" | "updatedAt">): Cart {
-    const item: Cart = {
+  create(data: Omit<Product, "id" | "createdAt" | "updatedAt">): Product {
+    const item: Product = {
       id: Date.now().toString(),
       ...data,
       createdAt: new Date(),
@@ -30,12 +30,9 @@ export class CartService {
     return item;
   }
 
-  update(
-    id: string,
-    data: Partial<Omit<Cart, "id" | "createdAt" | "updatedAt">>
-  ): Cart | undefined {
+  update(id: string, data: Partial<Omit<Product, "id" | "createdAt" | "updatedAt">>): Product | undefined {
     const index = this.items.findIndex((item) => item.id === id);
-
+    
     if (index === -1) {
       return undefined;
     }
@@ -51,7 +48,7 @@ export class CartService {
 
   delete(id: string): boolean {
     const index = this.items.findIndex((item) => item.id === id);
-
+    
     if (index === -1) {
       return false;
     }

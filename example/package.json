@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "bun test src/modules/",
+    "test:unit": "bun test src/modules/",
+    "test:e2e": "bun test test/e2e/",
+    "test:all": "bun test src/modules/ && bun test test/e2e/",
     "start:dev": "bun  --watch src/index.ts",
     "start": "bun src/index.ts"
   },
