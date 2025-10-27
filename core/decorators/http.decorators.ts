@@ -1,8 +1,9 @@
 import "reflect-metadata";
 
 /**
- * HTTP Method Decorators for ElysiaJS Framework
- * Inspired by NestJS but optimized for Elysia's performance
+ * HTTP Method Decorators for WynkJS Framework
+ * RESTful route handlers with TypeScript decorators
+ * Optimized for Elysia's performance on Bun runtime
  */
 
 export interface RouteOptions {

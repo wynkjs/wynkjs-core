@@ -1,6 +1,6 @@
 # Testing Guide
 
-WynkJS includes a built-in testing module similar to NestJS's `@nestjs/testing`, designed to work seamlessly with Bun's built-in test runner.
+WynkJS includes a built-in testing module designed to work seamlessly with Bun's built-in test runner.
 
 ## Overview
 

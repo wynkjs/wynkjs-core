@@ -5,7 +5,7 @@
  * It's just an example pattern you can COPY to your project and customize.
  *
  * WHY NOT INCLUDED IN CORE?
- * - Keeps WynkJS lightweight and fast (20x faster than NestJS!)
+ * - Keeps WynkJS lightweight and fast (built on Elysia's performance)
  * - Gives you freedom to use ANY database library (Drizzle, Prisma, TypeORM, Mongoose, etc.)
  * - No vendor lock-in
  * - No unnecessary dependencies

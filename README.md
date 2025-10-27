@@ -2,14 +2,14 @@
 
 <div align="center">
 
-**A high-performance TypeScript framework built on Elysia for Bun with NestJS-style decorators**
+**A high-performance TypeScript framework built on Elysia for Bun with elegant decorator-based architecture**
 
 [![npm version](https://img.shields.io/npm/v/wynkjs.svg)](https://www.npmjs.com/package/wynkjs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-1.0+-black.svg)](https://bun.sh/)
 
-_20x faster than Express, easier than NestJS, built for Bun_ ⚡
+_10x faster than Express/NestJs, built for modern TypeScript development on Bun_ ⚡
 
 [Quick Start](#-quick-start) • [CLI Tools](#️-cli-tools) • [Features](#-features--examples) • [Documentation](#-documentation)
 
@@ -19,7 +19,7 @@ _20x faster than Express, easier than NestJS, built for Bun_ ⚡
 
 ## About
 
-WynkJS is a modern, TypeScript-first web framework that brings NestJS-style decorators to the blazing-fast Elysia runtime built for **Bun**. It's a lightweight NestJS alternative with familiar concepts—controllers, dependency injection, guards, pipes, interceptors, and exception filters—designed for building high‑performance REST APIs and backends on **Bun**. WynkJS embraces ESM, ships first-class types, and keeps things simple so you can move fast without the bloat.
+WynkJS is a modern, TypeScript-first web framework that brings elegant decorator-based architecture to the blazing-fast Elysia runtime built for **Bun**. It features familiar concepts—controllers, dependency injection, guards, pipes, interceptors, and exception filters—designed for building high‑performance REST APIs and backends on **Bun**. WynkJS embraces ESM, ships first-class types, and keeps things simple so you can move fast without the bloat.
 
 **🚀 Get Started in 30 Seconds:**
 
@@ -35,16 +35,16 @@ Then generate your first API module:
 wynkjs g m product        # Generate complete CRUD module
 ```
 
-Keywords: NestJS alternative, Elysia framework, Bun framework, TypeScript decorators, dependency injection (DI), guards, pipes, interceptors, exception filters, fast web framework, REST API, backend.
+Keywords: Bun framework, Elysia framework, TypeScript decorators, dependency injection (DI), guards, pipes, interceptors, exception filters, fast web framework, REST API, backend, modern TypeScript.
 
 ---
 
 ## ✨ Why WynkJS?
 
-WynkJS combines the **speed of Elysia** with the **elegant decorator syntax of NestJS**, giving you the best of both worlds:
+WynkJS combines the **speed of Elysia** with an **elegant decorator-based architecture**, giving you the best of both worlds:
 
 - 🚀 **20x Faster** - Built on Elysia, one of the fastest web frameworks for Bun
-- 🎨 **Decorator-Based** - Familiar NestJS-style decorators
+- 🎨 **Decorator-Based** - Clean, intuitive decorator syntax for TypeScript
 - 💉 **Dependency Injection** - Built-in DI (no need to import reflect-metadata!)
 - 🔒 **TypeScript First** - TypeScript is mandatory, not optional. Full type safety and IntelliSense support
 - 🎯 **Simple & Clean** - Easy to learn, powerful to use
@@ -659,44 +659,146 @@ export class UserController {
 
 **Customize validation error format:**
 
+WynkJS provides three built-in **formatters** for validation errors:
+
 ```typescript
-import { WynkFactory, FormatErrorFormatter } from "wynkjs";
+import {
+  WynkFactory,
+  FormatErrorFormatter, // Object-based { field: ["messages"] }
+  SimpleErrorFormatter, // Simple array ["message1", "message2"]
+  DetailedErrorFormatter, // Detailed with field info
+} from "wynkjs";
 
 const app = WynkFactory.create({
   controllers: [UserController],
   // Choose your validation error format
-  validationErrorFormatter: new FormatErrorFormatter(), // NestJS-style (recommended)
-  // validationErrorFormatter: new SimpleErrorFormatter(), // Simple array
-  // validationErrorFormatter: new DetailedErrorFormatter(), // Detailed with paths
-});
-
-@Controller("/users")
-export class UserController {
-  @Post({
-    path: "/",
-    body: CreateUserDTO,
-  })
-  async create(@Body() body: any) {
-    // Body is automatically validated!
-    return { message: "User created", data: body };
-  }
-}
-
-// Choose your validation error format
-const app = WynkFactory.create({
-  controllers: [UserController],
-  // Option 1: Default format (recommended)
-  // validationErrorFormatter: new FormatErrorFormatter(), // NestJS-style
-  // Option 2: Simple array format
-  // validationErrorFormatter: new SimpleErrorFormatter(),
-  // Option 3: Detailed format with field info
-  // validationErrorFormatter: new DetailedErrorFormatter(),
+  validationErrorFormatter: new DetailedErrorFormatter(), // ✅ Recommended
 });
 ```
 
-**See [VALIDATION_FORMATTERS.md](./docs-wynkjs/VALIDATION_FORMATTERS.md) for all available error formats**
+**Available formatters:**
+
+1. **FormatErrorFormatter** (Object-based):
+
+   ```json
+   {
+     "statusCode": 400,
+     "message": "Validation failed",
+     "errors": {
+       "email": ["Invalid email address"],
+       "age": ["Must be at least 18"]
+     }
+   }
+   ```
+
+2. **SimpleErrorFormatter** (Simple array):
+
+   ```json
+   {
+     "statusCode": 400,
+     "message": "Validation failed",
+     "errors": ["Invalid email address", "Must be at least 18"]
+   }
+   ```
+
+3. **DetailedErrorFormatter** (Detailed):
+   ```json
+   {
+     "statusCode": 400,
+     "message": "Validation failed",
+     "errors": [
+       {
+         "field": "email",
+         "message": "Invalid email address",
+         "value": "invalid-email"
+       }
+     ]
+   }
+   ```
+
+**Note:** Formatters are for **validation errors only** (from DTO validation). For runtime exception handling, use **exception filters** - see [Exception Handling](#-exception-handling) section.
+
+**See [docs-wynkjs/VALIDATION_FORMATTERS.md](./docs-wynkjs/VALIDATION_FORMATTERS.md) for all available error formats**
+
+### ✨ Custom Validation Error Messages
+
+WynkJS supports custom error messages at the DTO level using the `error` or `errorMessage` property. This allows you to provide user-friendly error messages instead of the default TypeBox validation messages:
+
+```typescript
+// user.dto.ts
+import { DTO, CommonDTO } from "wynkjs";
+
+export const CreateUserDTO = DTO.Strict({
+  name: DTO.String({
+    minLength: 2,
+    maxLength: 50,
+    error: "Name must be between 2 and 50 characters", // ✨ Custom message
+  }),
+  email: CommonDTO.Email({
+    error: "Invalid email address", // ✨ Custom message
+  }),
+  mobile: DTO.String({
+    pattern: "^[6-9]{1}[0-9]{9}$",
+    error: "Invalid mobile number", // ✨ Custom message
+  }),
+  age: DTO.Number({
+    minimum: 18,
+    error: "You must be at least 18 years old", // ✨ Custom message
+  }),
+});
+```
+
+**Example response with invalid data:**
+
+```bash
+curl -X POST http://localhost:3000/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"A","email":"invalid","mobile":"1234567890","age":15}'
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 400,
+  "message": "Validation failed",
+  "errors": [
+    { "field": "name", "message": "Name must be between 2 and 50 characters" },
+    { "field": "email", "message": "Invalid email address" },
+    { "field": "mobile", "message": "Invalid mobile number" },
+    { "field": "age", "message": "You must be at least 18 years old" }
+  ]
+}
+```
+
+**Without custom messages, you would get generic TypeBox messages:**
+
+```json
+{
+  "errors": [
+    {
+      "field": "name",
+      "message": "Expected string length greater or equal to 2"
+    },
+    { "field": "email", "message": "Expected string to match email format" },
+    {
+      "field": "mobile",
+      "message": "Expected string to match '^[6-9]{1}[0-9]{9}$'"
+    },
+    { "field": "age", "message": "Expected number greater or equal to 18" }
+  ]
+}
+```
+
+**Note:** You can use either `error` or `errorMessage` property - both work the same way.
 
 ### 🚫 Exception Handling
+
+WynkJS provides a powerful exception handling system with **formatters** for validation errors and **filters** for runtime exceptions.
+
+#### Exception Classes
+
+Throw HTTP exceptions anywhere in your code:
 
 ```typescript
 import { Controller, Get, Param, NotFoundException } from "wynkjs";
@@ -721,7 +823,101 @@ export class UserController {
 - `UnauthorizedException` - 401
 - `ForbiddenException` - 403
 - `NotFoundException` - 404
+- `ConflictException` - 409
 - `InternalServerErrorException` - 500
+- And many more...
+
+#### Validation Error Formatting
+
+Format validation errors using **formatters** (passed to factory options):
+
+```typescript
+import { WynkFactory, DetailedErrorFormatter } from "wynkjs";
+
+const app = WynkFactory.create({
+  controllers: [UserController],
+  validationErrorFormatter: new DetailedErrorFormatter(), // ✅ For validation
+});
+```
+
+**Available formatters:**
+
+- `FormatErrorFormatter` - Object format `{ field: ["messages"] }`
+- `SimpleErrorFormatter` - Simple array `["message1", "message2"]`
+- `DetailedErrorFormatter` - Detailed with field info
+
+#### Global Exception Filters
+
+Handle runtime exceptions using **global filters**:
+
+```typescript
+import {
+  WynkFactory,
+  DatabaseExceptionFilter,
+  NotFoundExceptionFilter,
+  GlobalExceptionFilter,
+} from "wynkjs";
+
+const app = WynkFactory.create({
+  controllers: [UserController],
+  validationErrorFormatter: new DetailedErrorFormatter(),
+});
+
+// Register global exception filters
+app.useGlobalFilters(
+  new DatabaseExceptionFilter(), // Handles database errors
+  new NotFoundExceptionFilter(), // Smart 404 handling with response data checking
+  new GlobalExceptionFilter() // Catch-all for other exceptions
+);
+```
+
+**Available global filters:**
+
+- `DatabaseExceptionFilter` - Catches database errors (unique constraints, foreign keys, etc.)
+- `NotFoundExceptionFilter` - Smart filter that only formats truly empty 404 responses
+- `FileUploadExceptionFilter` - Handles file upload errors
+- `GlobalExceptionFilter` - Catch-all for unhandled exceptions
+
+**What's the difference?**
+
+| Feature          | Formatters                                         | Filters                    |
+| ---------------- | -------------------------------------------------- | -------------------------- |
+| **Purpose**      | Format validation errors                           | Handle runtime exceptions  |
+| **When?**        | During request validation (TypeBox/Elysia)         | When exceptions are thrown |
+| **Registration** | `WynkFactory.create({ validationErrorFormatter })` | `app.useGlobalFilters()`   |
+| **Example**      | `FormatErrorFormatter`                             | `DatabaseExceptionFilter`  |
+
+#### Custom Exception Filters
+
+Create your own filters for specific routes:
+
+```typescript
+import { WynkExceptionFilter, ExecutionContext, Catch } from "wynkjs";
+
+@Catch() // Catches all exceptions
+export class CustomExceptionFilter implements WynkExceptionFilter {
+  catch(exception: any, context: ExecutionContext) {
+    const request = context.getRequest();
+
+    return {
+      statusCode: exception.statusCode || 500,
+      message: exception.message,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+    };
+  }
+}
+
+// Use globally
+app.useGlobalFilters(new CustomExceptionFilter());
+
+// Or on specific controllers/routes
+@UseFilters(CustomExceptionFilter)
+@Controller("/api")
+export class ApiController {}
+```
+
+**See [ARCHITECTURE.md](./ARCHITECTURE.md) for complete architecture details**
 
 ### 🔄 Multiple Params and Query Validation
 
@@ -912,12 +1108,24 @@ export class UserController {
 }
 
 // index.ts
-import { WynkFactory } from "wynkjs";
+import {
+  WynkFactory,
+  DetailedErrorFormatter,
+  GlobalExceptionFilter,
+  DatabaseExceptionFilter,
+} from "wynkjs";
 import { UserController } from "./controllers/user.controller";
 
 const app = WynkFactory.create({
   controllers: [UserController],
+  validationErrorFormatter: new DetailedErrorFormatter(), // ✅ Format validation errors
 });
+
+// Register global exception filters
+app.useGlobalFilters(
+  new DatabaseExceptionFilter(), // Handles database errors
+  new GlobalExceptionFilter() // Catch-all for other exceptions
+);
 
 await app.listen(3000);
 console.log("🚀 Server running on http://localhost:3000");
@@ -1084,9 +1292,11 @@ my-wynkjs-app/
 
 ---
 
-## �🔗 Resources
+## 🔗 Resources
 
 - 📚 [Full Documentation](https://github.com/wynkjs/wynkjs-core)
+- 🏗️ [Architecture Guide](./ARCHITECTURE.md) - **NEW!** Complete guide to formatters vs filters
+- 🔄 [Migration Guide](./MIGRATION.md) - Upgrading from older versions
 - 🚀 [CLI Tool (create-wynkjs)](./packages/create-wynkjs/README.md)
 - 🎨 [Validation Formatters](./docs-wynkjs/VALIDATION_FORMATTERS.md)
 - 📝 [Changelog](./CHANGELOG.md)
@@ -1228,19 +1438,6 @@ Documentation improvements are always welcome!
 - **Code comments**: Add JSDoc comments for public APIs
 - **Guides**: Create helpful guides in `docs-wynkjs/`
 - **Examples**: Add real-world usage examples
-
-### 🚀 Release Process (Maintainers)
-
-1. Update `CHANGELOG.md` with changes
-2. Bump version in `package.json` files
-3. Build all packages
-4. Commit and tag the release
-5. Publish to npm:
-   ```bash
-   npm publish --access public
-   cd packages/create-wynkjs && npm publish --access public
-   cd ../wynkjs-cli && npm publish --access public
-   ```
 
 ### 💬 Community
 

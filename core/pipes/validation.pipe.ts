@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import { schemaRegistry } from "../schema-registry";
 
 /**
  * Validation Pipe Interface
@@ -101,23 +102,44 @@ export class ValidationPipe implements ValidationPipeTransform {
   }
 
   /**
-   * Default error formatting
+   * Default error formatting with custom errorMessage support
    */
-  protected defaultFormatError(error: ElysiaValidationError): any {
+  protected defaultFormatError(
+    error: ElysiaValidationError,
+    schemaKey?: string
+  ): any {
     const errors: Array<{ field: string; message: string; value?: any }> = [];
 
     if (error.errors && error.errors.length > 0) {
       error.errors.forEach((err) => {
+        const fieldPath = err.path?.replace(/^\//, "") || "unknown";
+
+        // Try to get custom message from schema registry first
+        let message = err.summary || err.message;
+        if (schemaKey) {
+          const customMessage = schemaRegistry.getErrorMessage(
+            schemaKey,
+            fieldPath
+          );
+          if (customMessage) {
+            message = customMessage;
+          }
+        }
+
         errors.push({
-          field: err.path?.replace(/^\//, "") || "unknown",
-          message: err.summary || err.message,
+          field: fieldPath,
+          message: message,
           value: err.value,
         });
       });
     } else {
+      // Check schema for custom errorMessage
+      const customMessage = (error as any).schema?.errorMessage;
+      const message = customMessage || error.summary || error.message;
+
       errors.push({
         field: error.property?.replace(/^\//, "") || "unknown",
-        message: error.summary || error.message,
+        message: message,
         value: (error as any).value,
       });
     }
@@ -131,7 +153,7 @@ export class ValidationPipe implements ValidationPipeTransform {
 }
 
 /**
- * Custom Format Error Pipe (like NestJS example)
+ * Custom Format Error Pipe
  * Formats validation errors as { [field]: [messages] }
  */
 export class FormatErrorPipe extends ValidationPipe {
@@ -146,11 +168,17 @@ export class FormatErrorPipe extends ValidationPipe {
             if (!formattedErrors[field]) {
               formattedErrors[field] = [];
             }
-            formattedErrors[field].push(err.summary || err.message);
+            // Use custom errorMessage if available
+            const customMessage = err.schema?.errorMessage;
+            const message = customMessage || err.summary || err.message;
+            formattedErrors[field].push(message);
           });
         } else {
           const field = error.property?.replace(/^\//, "") || "unknown";
-          formattedErrors[field] = [error.summary || error.message];
+          // Use custom errorMessage if available
+          const customMessage = (error as any).schema?.errorMessage;
+          const message = customMessage || error.summary || error.message;
+          formattedErrors[field] = [message];
         }
 
         return {
@@ -175,10 +203,16 @@ export class SimpleErrorPipe extends ValidationPipe {
 
         if (error.errors && error.errors.length > 0) {
           error.errors.forEach((err) => {
-            messages.push(err.summary || err.message);
+            // Use custom errorMessage if available
+            const customMessage = err.schema?.errorMessage;
+            const message = customMessage || err.summary || err.message;
+            messages.push(message);
           });
         } else {
-          messages.push(error.summary || error.message);
+          // Use custom errorMessage if available
+          const customMessage = (error as any).schema?.errorMessage;
+          const message = customMessage || error.summary || error.message;
+          messages.push(message);
         }
 
         return {
@@ -208,9 +242,13 @@ export class DetailedErrorPipe extends ValidationPipe {
 
         if (error.errors && error.errors.length > 0) {
           error.errors.forEach((err) => {
+            // Use custom errorMessage if available
+            const customMessage = err.schema?.errorMessage;
+            const message = customMessage || err.summary || err.message;
+
             errors.push({
               field: err.path?.replace(/^\//, "") || "unknown",
-              message: err.summary || err.message,
+              message: message,
               value: err.value,
               expected: err.schema?.format
                 ? `${err.schema.type} (format: ${err.schema.format})`

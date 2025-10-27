@@ -24,7 +24,7 @@ interface ErrorResponseDto {
  * Handles all HttpException instances and unknown errors
  * Provides different responses for production vs development
  *
- * Based on NestJS exception filter pattern with:
+ * Based on modern exception filter patterns with:
  * - 4xx Client Errors handling
  * - 5xx Server Errors handling
  * - Production vs Development modes

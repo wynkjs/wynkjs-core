@@ -21,7 +21,7 @@ export interface WynkExceptionFilter<T = any> {
  * export class HttpWynkExceptionFilter implements WynkExceptionFilter {}
  *
  * @Catch() // Catches all exceptions
- * export class AllExceptionsFilter implements WynkExceptionFilter {}
+ * export class AllExceptions implements WynkExceptionFilter {}
  */
 export function Catch(...exceptions: any[]): ClassDecorator {
   return (target: any) => {
@@ -272,7 +272,7 @@ export class HttpWynkExceptionFilter
  * All exceptions filter - catches everything
  */
 @Catch()
-export class AllExceptionsFilter implements WynkExceptionFilter {
+export class AllExceptions implements WynkExceptionFilter {
   catch(exception: any, context: ExecutionContext) {
     const response = context.getResponse();
 
@@ -291,6 +291,140 @@ export class AllExceptionsFilter implements WynkExceptionFilter {
       timestamp: new Date().toISOString(),
       message: exception.message || "Internal server error",
       error: "Internal Server Error",
+    };
+  }
+}
+
+
+
+/**
+ * Authentication Exception Filter - Handles auth errors
+ *
+ * ⚠️ IMPORTANT: This catches ALL UnauthorizedException instances!
+ * Use on specific routes/controllers, not globally.
+ *
+ * @example
+ * // ✅ GOOD: Use on auth-protected controller
+ * @UseFilters(AuthenticationExceptionFilter)
+ * @Controller('/auth')
+ * export class AuthController {
+ *   @Post('/login')
+ *   async login() {
+ *     throw new UnauthorizedException('Invalid credentials');
+ *   }
+ * }
+ */
+export class AuthenticationException
+  implements WynkExceptionFilter<UnauthorizedException>
+{
+  catch(exception: UnauthorizedException, context: ExecutionContext) {
+    const response = context.getResponse();
+    const request = context.getRequest();
+
+    return {
+      statusCode: exception.statusCode,
+      error: "Authentication Failed",
+      message: exception.message || "Invalid credentials",
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      hint: "Please check your authentication token or credentials",
+    };
+  }
+}
+
+/**
+ * Authorization Exception Filter - Handles permission errors
+ *
+ * ⚠️ IMPORTANT: This catches ALL ForbiddenException instances!
+ * Use on specific routes/controllers, not globally.
+ *
+ * @example
+ * // ✅ GOOD: Use on admin-only controller
+ * @UseFilters(AuthorizationExceptionFilter)
+ * @Controller('/admin')
+ * export class AdminController {
+ *   @Get('/users')
+ *   async getAllUsers() {
+ *     throw new ForbiddenException('Admin access required');
+ *   }
+ * }
+ */
+export class AuthorizationException
+  implements WynkExceptionFilter<ForbiddenException>
+{
+  catch(exception: ForbiddenException, context: ExecutionContext) {
+    const response = context.getResponse();
+    const request = context.getRequest();
+
+    return {
+      statusCode: exception.statusCode,
+      error: "Authorization Failed",
+      message:
+        exception.message ||
+        "You don't have permission to access this resource",
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      requiredPermissions: (exception as any).requiredPermissions || [],
+    };
+  }
+}
+
+
+
+/**
+ * Rate Limit Exception Filter - Handles rate limit errors
+ * @example
+ * @UseFilters(RateLimitExceptionFilter)
+ * @Post()
+ * async create() {}
+ */
+export class RateLimitException implements WynkExceptionFilter {
+  catch(exception: any, context: ExecutionContext) {
+    const response = context.getResponse();
+    const request = context.getRequest();
+
+    // Don't catch HttpException or its subclasses
+    if (exception instanceof HttpException) {
+      throw exception;
+    }
+
+    return {
+      statusCode: 429,
+      error: "Too Many Requests",
+      message: exception.message || "Rate limit exceeded",
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      retryAfter: exception.retryAfter || 60,
+      hint: "Please wait before making another request",
+    };
+  }
+}
+
+/**
+ * Business Logic Exception Filter - Handles business rule violations
+ * @example
+ * @UseFilters(BusinessLogicExceptionFilter)
+ * @Post('/transfer')
+ * async transfer(@Body() data: any) {}
+ */
+export class BusinessLogicException implements WynkExceptionFilter {
+  catch(exception: any, context: ExecutionContext) {
+    const response = context.getResponse();
+    const request = context.getRequest();
+
+    // Don't catch HttpException or its subclasses
+    if (exception instanceof HttpException) {
+      throw exception;
+    }
+
+    return {
+      statusCode: exception.statusCode || 422,
+      error: "Business Rule Violation",
+      message: exception.message || "Business logic constraint violated",
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      rule: exception.rule || "unknown",
+      details: exception.details || {},
     };
   }
 }

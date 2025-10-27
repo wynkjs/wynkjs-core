@@ -52,7 +52,8 @@ export * from "./decorators/pipe.advanced";
 
 // Exception Filters
 export * from "./decorators/exception.decorators";
-export * from "./decorators/exception.advanced";
+export * from "./decorators/formatter.decorators";
+export * from "./filters/exception.filters";
 
 // Database Registry (General-Purpose)
 // Works with ANY ORM/ODM: Drizzle, Mongoose, Prisma, TypeORM, custom Database classes
@@ -66,6 +67,9 @@ export * from "./decorators/database.decorators";
 
 // DTO Utilities
 export * from "./dto";
+
+// Schema Registry for custom error messages
+export { schemaRegistry } from "./schema-registry";
 
 // Application Factory
 export * from "./factory";

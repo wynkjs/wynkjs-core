@@ -117,7 +117,7 @@ export const CommonDTO = {
   PhoneIN: (options = {}) =>
     t.String({
       pattern: "^[6-9]{1}[0-9]{9}$",
-      errorMessage: "Invalid mobile number",
+      error: "Invalid mobile number",
       ...options,
     }),
 

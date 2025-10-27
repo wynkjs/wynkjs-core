@@ -8,10 +8,12 @@ export const CreateUserDTO = DTO.Strict({
   mobile: DTO.Optional(
     DTO.String({
       pattern: "^[6-9]{1}[0-9]{9}$",
-      errorMessage: "Invalid mobile number",
+      error: "Invalid mobile number",
     })
   ),
-  age: DTO.Optional(DTO.Number({ minimum: 18 })),
+  age: DTO.Optional(
+    DTO.Number({ minimum: 18, error: "Age must be at least 18" })
+  ),
 });
 
 export interface CreateUserType {

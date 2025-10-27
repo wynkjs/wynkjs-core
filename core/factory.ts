@@ -13,7 +13,8 @@ import {
   HttpException,
 } from "./decorators/exception.decorators";
 import { ParamMetadata } from "./decorators/param.decorators";
-import { ErrorFormatter } from "./decorators/exception.advanced";
+import { ErrorFormatter } from "./decorators/formatter.decorators";
+import { schemaRegistry } from "./schema-registry";
 
 /**
  * Application Factory for WynkJS Framework
@@ -41,7 +42,7 @@ export class WynkFramework {
     this.validationFormatter = options.validationErrorFormatter;
 
     // Configure Elysia's error handling for validation errors
-    this.app.onError(({ code, error, set }) => {
+    this.app.onError(({ code, error, set, request }) => {
       // Handle ValidationError from Elysia
       if (
         code === "VALIDATION" ||
@@ -49,6 +50,18 @@ export class WynkFramework {
       ) {
         const validationError = error as any;
         set.status = 400;
+
+        // Get the validation type (body, query, params)
+        const validationType = validationError.on || "body";
+
+        // Try to find the schema key for this route
+        const method = request.method;
+        const path = new URL(request.url).pathname;
+        const schemaKey = schemaRegistry.getSchemaKeyForRoute(
+          method,
+          path,
+          validationType
+        );
 
         // Try to collect all validation errors using TypeBox
         const allErrors: Record<string, string[]> = {};
@@ -68,7 +81,20 @@ export class WynkFramework {
                 if (!allErrors[field]) {
                   allErrors[field] = [];
                 }
-                allErrors[field].push(err.message || "Validation failed");
+
+                // Try to get custom error message from schema registry
+                let message = err.message || "Validation failed";
+                if (schemaKey) {
+                  const customMessage = schemaRegistry.getErrorMessage(
+                    schemaKey,
+                    field
+                  );
+                  if (customMessage) {
+                    message = customMessage;
+                  }
+                }
+
+                allErrors[field].push(message);
               });
             } else {
               // Fallback to single error
@@ -76,10 +102,22 @@ export class WynkFramework {
                 validationError.valueError?.path?.replace(/^\//, "") ||
                 validationError.on ||
                 "body";
-              const message =
+              let message =
                 validationError.customError ||
                 validationError.valueError?.message ||
                 "Validation failed";
+
+              // Try to get custom error message
+              if (schemaKey) {
+                const customMessage = schemaRegistry.getErrorMessage(
+                  schemaKey,
+                  field
+                );
+                if (customMessage) {
+                  message = customMessage;
+                }
+              }
+
               allErrors[field] = [message];
             }
           } catch (e) {
@@ -88,10 +126,22 @@ export class WynkFramework {
               validationError.valueError?.path?.replace(/^\//, "") ||
               validationError.on ||
               "body";
-            const message =
+            let message =
               validationError.customError ||
               validationError.valueError?.message ||
               "Validation failed";
+
+            // Try to get custom error message
+            if (schemaKey) {
+              const customMessage = schemaRegistry.getErrorMessage(
+                schemaKey,
+                field
+              );
+              if (customMessage) {
+                message = customMessage;
+              }
+            }
+
             allErrors[field] = [message];
           }
         } else {
@@ -100,10 +150,22 @@ export class WynkFramework {
             validationError.valueError?.path?.replace(/^\//, "") ||
             validationError.on ||
             "body";
-          const message =
+          let message =
             validationError.customError ||
             validationError.valueError?.message ||
             "Validation failed";
+
+          // Try to get custom error message
+          if (schemaKey) {
+            const customMessage = schemaRegistry.getErrorMessage(
+              schemaKey,
+              field
+            );
+            if (customMessage) {
+              message = customMessage;
+            }
+          }
+
           allErrors[field] = [message];
         }
 
@@ -598,13 +660,29 @@ export class WynkFramework {
       const elysiaOptions: any = {};
 
       if (routeOptions.body || bodySchema) {
-        elysiaOptions.body = routeOptions.body || bodySchema;
+        const schema = routeOptions.body || bodySchema;
+        elysiaOptions.body = schema;
+
+        // Register schema with custom error messages
+        const schemaKey = `${ControllerClass.name}.${methodName}.body`;
+        schemaRegistry.registerSchema(schemaKey, schema);
+        schemaRegistry.registerRoute(method, fullPath, schemaKey, "body");
       }
       if (routeOptions.query) {
         elysiaOptions.query = routeOptions.query;
+
+        // Register query schema
+        const schemaKey = `${ControllerClass.name}.${methodName}.query`;
+        schemaRegistry.registerSchema(schemaKey, routeOptions.query);
+        schemaRegistry.registerRoute(method, fullPath, schemaKey, "query");
       }
       if (routeOptions.params) {
         elysiaOptions.params = routeOptions.params;
+
+        // Register params schema
+        const schemaKey = `${ControllerClass.name}.${methodName}.params`;
+        schemaRegistry.registerSchema(schemaKey, routeOptions.params);
+        schemaRegistry.registerRoute(method, fullPath, schemaKey, "params");
       }
       if (routeOptions.headers) {
         elysiaOptions.headers = routeOptions.headers;

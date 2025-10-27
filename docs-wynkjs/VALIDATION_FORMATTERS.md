@@ -1,6 +1,6 @@
 # Validation Error Formatters
 
-WynkJS provides multiple built-in formatters for validation errors, allowing you to choose the format that best fits your API design - just like NestJS!
+WynkJS provides multiple built-in formatters for validation errors, allowing you to choose the format that best fits your API design.
 
 ## Available Formatters
 
@@ -28,7 +28,7 @@ const app = WynkFactory.create({
 }
 ```
 
-### 2. FormatErrorFormatter (NestJS-Style)
+### 2. FormatErrorFormatter (Object-based)
 
 **Format**: `{ statusCode, message, errors: { field: [messages] } }`
 
@@ -168,7 +168,7 @@ async function bootstrap() {
     logger: true,
   });
 
-  // Option 2: NestJS-style format
+  // Option 2: Object-based format
   // const app = WynkFactory.create({
   //   controllers: [UserController],
   //   cors: true,

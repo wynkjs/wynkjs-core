@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- 🧪 **Testing Module** - Built-in testing utilities similar to @nestjs/testing
+- 🧪 **Testing Module** - Built-in testing utilities for WynkJS applications
   - `Test.createTestingModule()` - Create isolated test modules with DI
   - `MockFactory` - Create mocks and spies for testing
   - Test utilities for creating mock requests, responses, and execution contexts
@@ -58,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✨ **Dual naming convention support** - Both capital-cased (recommended) and lowercase (tsyringe convention) decorators are available
 - 📝 **Customizable validation error formatters** - Added `FormatErrorFormatter`, `SimpleErrorFormatter`, and `DetailedErrorFormatter` with `validationErrorFormatter` option in `ApplicationOptions`
 - 📚 **Enhanced documentation** - Updated both main and core README files with DI improvements
-- 🎨 **NestJS-style exception filters** - Complete exception filter pattern with production/development modes
+- 🎨 **Exception filters** - Complete exception filter pattern with production/development modes
 
 ### Changed
 
@@ -76,14 +76,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 🎉 Initial release of WynkJS
 - 🚀 High-performance framework built on Elysia
-- 🎨 NestJS-style decorator-based API
+- 🎨 Decorator-based API with TypeScript support
 - 💉 Dependency injection with tsyringe
 - 🔒 Type-safe TypeScript support
 - 🔌 Complete middleware system (Guards, Interceptors, Pipes, Filters)
 - ✅ DTO validation with TypeBox
 - 📦 Database helpers (optional)
 - 🌐 RESTful routing decorators
-- ⚡ 20x faster than Express/NestJS
+- ⚡ 10x faster than Express/NestJs (built on Elysia's performance)
 
 [1.0.1]: https://github.com/wynkjs/wynkjs-core/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/wynkjs/wynkjs-core/releases/tag/v1.0.0

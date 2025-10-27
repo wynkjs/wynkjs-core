@@ -316,7 +316,7 @@ ${prettier ? "- `bun run format` - Format code with Prettier" : ""}
 
 ## 🛠️ Built With
 
-- [WynkJS](https://github.com/wynkjs/wynkjs-core) - NestJS-style framework for Bun
+- [WynkJS](https://github.com/wynkjs/wynkjs-core) - High-performance TypeScript framework for Bun
 - [TypeScript](https://www.typescriptlang.org/) - Type-safe JavaScript
 ${eslint ? "- [ESLint](https://eslint.org/) - Code linting" : ""}
 ${prettier ? "- [Prettier](https://prettier.io/) - Code formatting" : ""}

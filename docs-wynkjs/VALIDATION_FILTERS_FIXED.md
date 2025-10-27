@@ -17,7 +17,7 @@ Created a proper architecture separating **Pipes** (data transformation) from **
 ```
 ValidationExceptionFilter (filter with catch method)
   └── ErrorFormatter (formatters for different output styles)
-      ├── FormatErrorFormatter (NestJS-style: { field: [messages] })
+      ├── FormatErrorFormatter (object-based: { field: [messages] })
       ├── SimpleErrorFormatter (simple array: ["message1", "message2"])
       └── DetailedErrorFormatter (detailed: [{ field, message, value, expected }])
 ```
@@ -29,7 +29,7 @@ ValidationExceptionFilter (filter with catch method)
 Added:
 
 - `ErrorFormatter` interface
-- `FormatErrorFormatter` class (NestJS-style format)
+- `FormatErrorFormatter` class (object-based format)
 - `SimpleErrorFormatter` class (simple array format)
 - `DetailedErrorFormatter` class (detailed object format)
 - Updated `ValidationExceptionFilter` to accept an optional formatter
@@ -40,7 +40,7 @@ All formatters are exported from `core/index.ts` via `exception.advanced`.
 
 ## Usage
 
-### Option 1: FormatErrorFormatter (NestJS-style) ✅ WORKING
+### Option 1: FormatErrorFormatter (Object-based) ✅ WORKING
 
 ```typescript
 import { ValidationExceptionFilter, FormatErrorFormatter } from "wynkjs";
@@ -163,7 +163,7 @@ curl -X POST http://localhost:3000/users -H "Content-Type: application/json" -d 
 
 ## Ready to Publish
 
-The core is now fixed and follows NestJS patterns correctly. Run:
+The core is now fixed and follows modern TypeScript patterns correctly. Run:
 
 ```bash
 npm run build

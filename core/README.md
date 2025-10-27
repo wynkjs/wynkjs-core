@@ -25,7 +25,7 @@
 
 ## 🚀 Why This Approach?
 
-1. **Performance** - 20x faster than NestJS (Elysia's speed)
+1. **Performance** - Built on Elysia's speed (10x faster than Express/NestJs)
 2. **Flexibility** - Use ANY database library you want
 3. **Simplicity** - Learn once, use anywhere
 4. **Small Bundle** - No unnecessary code

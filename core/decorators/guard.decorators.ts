@@ -1,8 +1,8 @@
 import "reflect-metadata";
 
 /**
- * Guard Decorators and Interfaces for ElysiaJS Framework
- * Similar to NestJS guards for route protection
+ * Guard Decorators and Interfaces for WynkJS Framework
+ * Guards for route protection and authorization
  */
 
 /**

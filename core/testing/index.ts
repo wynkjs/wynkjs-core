@@ -1,7 +1,7 @@
 /**
  * WynkJS Testing Module
- * Provides utilities for testing WynkJS applications
- * Similar to @nestjs/testing
+ * Built-in testing utilities for WynkJS applications
+ * Works with Bun's native test runner
  */
 
 import { container } from "tsyringe";

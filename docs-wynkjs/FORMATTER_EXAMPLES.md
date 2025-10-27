@@ -32,7 +32,7 @@ const app = WynkFactory.create({
 
 ---
 
-## 2. FormatErrorFormatter (NestJS-Style)
+## 2. FormatErrorFormatter (Object-based)
 
 ```typescript
 import { FormatErrorFormatter } from "wynkjs";
@@ -118,7 +118,7 @@ const app = WynkFactory.create({
 | Formatter                  | Format Type        | Use Case                                 |
 | -------------------------- | ------------------ | ---------------------------------------- |
 | **Default**                | Object with arrays | Best for most APIs, field-based grouping |
-| **FormatErrorFormatter**   | Same as default    | Explicitly NestJS-compatible             |
+| **FormatErrorFormatter**   | Same as default    | Explicitly object-based format           |
 | **SimpleErrorFormatter**   | Flat array         | Mobile apps, minimal response size       |
 | **DetailedErrorFormatter** | Array of objects   | Development, debugging, detailed info    |
 

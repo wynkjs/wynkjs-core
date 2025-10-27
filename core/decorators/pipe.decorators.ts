@@ -103,7 +103,7 @@ export async function executePipes(
  * create(@Body() dto: CreateDto) {}
  *
  * @example
- * // Custom formatting (like NestJS)
+ * // Custom formatting with detailed errors
  * const customPipe = new ValidationPipe({
  *   exceptionFactory: (errors) => ({
  *     statusCode: 400,
@@ -326,7 +326,9 @@ export class ParseEnumPipe<T = any> implements WynkPipeTransform<string, T> {
 
     if (!enumValues.includes(value)) {
       throw new Error(
-        `Validation failed: "${value}" is not a valid enum value. Valid values: ${enumValues.join(", ")}`
+        `Validation failed: "${value}" is not a valid enum value. Valid values: ${enumValues.join(
+          ", "
+        )}`
       );
     }
 
@@ -368,7 +370,7 @@ export class TrimPipe implements WynkPipeTransform<string, string> {
 
 /**
  * FormatErrorPipe - Formats validation errors as { [field]: [messages] }
- * Like NestJS format with field names as keys
+ * Object format with field names as keys
  *
  * @example
  * // In index.ts or controller

@@ -32,7 +32,7 @@ async function bootstrap() {
     validationErrorFormatter: new DetailedErrorFormatter(),
   });
 
-  // Option 2: With FormatErrorFormatter (NestJS-style format)
+  // Option 2: With FormatErrorFormatter (object-based format)
   // const app = WynkFactory.create({
   //   controllers: [UserController],
   //   cors: true,
