@@ -3,7 +3,7 @@ import "reflect-metadata";
 /**
  * HTTP Method Decorators for WynkJS Framework
  * RESTful route handlers with TypeScript decorators
- * Optimized for Elysia's performance on Bun runtime
+ * Optimized for WynkJS's performance on Bun runtime
  */
 
 export interface RouteOptions {
@@ -17,13 +17,24 @@ export interface RouteOptions {
 
 /**
  * Controller decorator - Defines a controller with a base path
- * @param path Base path for all routes in this controller
+ * @param pathOrOptions Base path string or options object with path
  * @example
  * @Controller('/users')
  * export class UserController {}
+ *
+ * @Controller({ path: '/users' })
+ * export class UserController {}
  */
-export function Controller(path: string = ""): ClassDecorator {
+export function Controller(
+  pathOrOptions?: string | { path?: string }
+): ClassDecorator {
   return (target: any) => {
+    // Handle both string and object formats
+    const path =
+      typeof pathOrOptions === "string"
+        ? pathOrOptions
+        : pathOrOptions?.path || "";
+
     Reflect.defineMetadata("basePath", path, target);
     Reflect.defineMetadata("routes", [], target);
   };

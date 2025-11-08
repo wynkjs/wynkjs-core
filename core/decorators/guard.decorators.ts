@@ -81,6 +81,11 @@ export function createExecutionContext(
 }
 
 /**
+ * Guard instance cache for singleton pattern
+ */
+const guardInstanceCache = new Map<Function, CanActivate>();
+
+/**
  * Helper function to execute guards
  */
 export async function executeGuards(
@@ -91,15 +96,20 @@ export async function executeGuards(
     let result: boolean;
 
     if (typeof guard === "function") {
-      // Guard is a class, instantiate it
-      const guardInstance = new (guard as any)();
-      if (guardInstance.canActivate) {
-        result = await guardInstance.canActivate(context);
-      } else {
+      // Guard is a class, get or create singleton instance
+      let guardInstance = guardInstanceCache.get(guard);
+      if (!guardInstance) {
+        guardInstance = new (guard as any)() as CanActivate;
+        guardInstanceCache.set(guard, guardInstance);
+      }
+
+      if (!guardInstance.canActivate) {
         throw new Error(
           `Guard ${guard.name} must implement CanActivate interface`
         );
       }
+
+      result = await guardInstance.canActivate(context);
     } else {
       // Guard is already an instance
       result = await guard.canActivate(context);

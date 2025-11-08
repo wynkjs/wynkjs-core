@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import { WynkInterceptor, CallHandler } from "./interceptor.decorators";
-import { ExecutionContext } from "./guard.decorators";
+import { WynkInterceptor } from "./interceptor.decorators";
+import { InterceptorContext } from "../interfaces/interceptor.interface";
 
 /**
  * Advanced Interceptors for WynkJS Framework
@@ -15,12 +15,15 @@ import { ExecutionContext } from "./guard.decorators";
  * export class ApiController {}
  */
 export class ResponseInterceptor implements WynkInterceptor {
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<any> {
+  async intercept(
+    context: InterceptorContext,
+    next: () => Promise<any>
+  ): Promise<any> {
     const request = context.getRequest();
     const startTime = Date.now();
 
     try {
-      const data = await next.handle();
+      const data = await next();
       const duration = Date.now() - startTime;
 
       return {
@@ -63,12 +66,17 @@ export class ResponseInterceptor implements WynkInterceptor {
  * async getData() {}
  */
 export class ErrorHandlingInterceptor implements WynkInterceptor {
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<any> {
+  async intercept(
+    context: InterceptorContext,
+    next: () => Promise<any>
+  ): Promise<any> {
     try {
-      return await next.handle();
+      return await next();
     } catch (error: any) {
       console.error(
-        `❌ Error in ${context.getRequest().method} ${context.getRequest().url}:`,
+        `❌ Error in ${context.getRequest().method} ${
+          context.getRequest().url
+        }:`,
         error
       );
 
@@ -93,8 +101,11 @@ export class ErrorHandlingInterceptor implements WynkInterceptor {
 export class CompressionInterceptor implements WynkInterceptor {
   constructor(private threshold: number = 1024) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<any> {
-    const data = await next.handle();
+  async intercept(
+    context: InterceptorContext,
+    next: () => Promise<any>
+  ): Promise<any> {
+    const data = await next();
     const dataSize = JSON.stringify(data).length;
 
     if (dataSize > this.threshold) {
@@ -123,7 +134,10 @@ export class RateLimitInterceptor implements WynkInterceptor {
     private windowMs: number = 60000
   ) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<any> {
+  async intercept(
+    context: InterceptorContext,
+    next: () => Promise<any>
+  ): Promise<any> {
     const request = context.getRequest();
     const clientIp = request.headers?.get?.("x-forwarded-for") || "unknown";
     const now = Date.now();
@@ -147,7 +161,7 @@ export class RateLimitInterceptor implements WynkInterceptor {
     history.push(now);
     this.requests.set(clientIp, history);
 
-    return next.handle();
+    return next();
   }
 }
 
@@ -167,7 +181,10 @@ export class CorsInterceptor implements WynkInterceptor {
     } = {}
   ) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<any> {
+  async intercept(
+    context: InterceptorContext,
+    next: () => Promise<any>
+  ): Promise<any> {
     const response = context.getResponse();
     const origin = this.options.origin || "*";
     const methods = this.options.methods || [
@@ -195,7 +212,7 @@ export class CorsInterceptor implements WynkInterceptor {
       }
     }
 
-    return next.handle();
+    return next();
   }
 }
 
@@ -213,8 +230,11 @@ export class SanitizeInterceptor implements WynkInterceptor {
     this.fieldsToRemove = fieldsToRemove;
   }
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<any> {
-    const data = await next.handle();
+  async intercept(
+    context: InterceptorContext,
+    next: () => Promise<any>
+  ): Promise<any> {
+    const data = await next();
     return this.sanitize(data);
   }
 
@@ -247,7 +267,10 @@ export class SanitizeInterceptor implements WynkInterceptor {
  * async getUsers(@Query('page') page: number, @Query('limit') limit: number) {}
  */
 export class PaginationInterceptor implements WynkInterceptor {
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<any> {
+  async intercept(
+    context: InterceptorContext,
+    next: () => Promise<any>
+  ): Promise<any> {
     const request = context.getRequest();
     const url = new URL(
       request.url,
@@ -257,7 +280,7 @@ export class PaginationInterceptor implements WynkInterceptor {
     const page = parseInt(url.searchParams.get("page") || "1");
     const limit = parseInt(url.searchParams.get("limit") || "10");
 
-    const data = await next.handle();
+    const data = await next();
 
     // If data is an array, add pagination
     if (Array.isArray(data)) {

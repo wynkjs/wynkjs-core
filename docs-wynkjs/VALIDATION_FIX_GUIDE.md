@@ -46,7 +46,7 @@ export const MultiParamDto = DTO.Object({
 })
 ```
 
-### 3. Query Strings Are Validated by Elysia
+### 3. Query Strings Are Validated by WynkJS
 
 **How it works**:
 
@@ -61,7 +61,7 @@ export const UserQueryDto = DTO.Object({
 @Get({
   path: "/:id",
   params: UserIdDto,
-  query: UserQueryDto  // Elysia validates ?includePosts=true&includeComments=false
+  query: UserQueryDto  // WynkJS validates ?includePosts=true&includeComments=false
 })
 async findOne(
   @Param("id") id: string,      // Extract specific param
@@ -71,7 +71,7 @@ async findOne(
 }
 ```
 
-**Elysia automatically**:
+**WynkJS automatically**:
 
 - Parses query strings from URL
 - Converts types (string "true" → boolean true)
@@ -213,7 +213,7 @@ curl "http://localhost:3000/users/123?includePosts=false&includeComments=true"
 
 ✅ **Fixed**: All HTTP decorators now accept `RouteOptions` object
 ✅ **Clarified**: Param DTO must match route parameter names exactly
-✅ **Clarified**: Query validation works via Elysia (converts types automatically)
+✅ **Clarified**: Query validation works via WynkJS (converts types automatically)
 ✅ **Clarified**: `@Param("name")` extracts value, `@Param()` extracts full object
 
 **No core changes needed for params/query** - they work correctly. The issue was DTO schema mismatch.

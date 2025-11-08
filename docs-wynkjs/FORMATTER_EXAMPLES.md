@@ -1,5 +1,33 @@
 # Validation Error Formatter Examples
 
+## Custom Error Messages in DTOs
+
+WynkJS supports custom error messages using the `error` property in your DTOs:
+
+```typescript
+import { DTO, CommonDTO } from "wynkjs";
+
+export const UserUpdateDTO = DTO.Strict({
+  email: DTO.Optional(
+    DTO.String({
+      format: "email",
+      minLength: 5,
+      error: "Please provide a valid email address with at least 5 characters",
+    })
+  ),
+  age: DTO.Optional(
+    DTO.Number({
+      minimum: 18,
+      error: "Age must be at least 18 years",
+    })
+  ),
+});
+```
+
+When validation fails, your custom error messages will be displayed instead of the default TypeBox messages.
+
+---
+
 ## Test Request
 
 ```bash

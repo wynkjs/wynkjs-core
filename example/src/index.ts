@@ -1,9 +1,10 @@
+import "dotenv/config"; // ✅ Load environment variables
 import {
   FormatErrorFormatter,
   SimpleErrorFormatter,
   DetailedErrorFormatter,
-  // ValidationExceptionFilter,
   WynkFactory,
+  CorsOptions,
 } from "wynkjs";
 
 import { GlobalExceptionFilter, DatabaseExceptionFilter } from "wynkjs";
@@ -11,23 +12,49 @@ import { UserController } from "./modules/user/user.controller";
 import { ValidationExceptionFilter } from "./filter/validation.filter";
 import { CustomExceptionFilter } from "./filter/custom.filter";
 import { ProductController } from "./modules/product/product.controller";
+import { CorsTestController } from "./modules/cors-test/cors-test.controller";
+import { DatabaseService } from "./database";
+import { corsOptions } from "./corsOptions";
+// Import CORS examples
+import {
+  corsDynamicValidation,
+  corsEnvironmentBased,
+  corsWithLogging,
+  corsMultiTenant,
+  corsSecure,
+  corsDevelopment,
+} from "./cors-examples";
+
 /**
  * Bootstrap WynkJS Application
- * Example of using WynkJS framework with Database Registry
+ * Example of using WynkJS framework with Database Provider
  */
 async function bootstrap() {
   console.log("🚀 Starting WynkJS Application...\n");
 
-  // Set DATABASE_URL if not set
+  // CORS Configuration Options:
+  // 1. corsOptions - Production whitelist (from corsOptions.ts)
+  // 2. corsDynamicValidation - Dynamic validation with subdomain support
+  // 3. corsEnvironmentBased - Different behavior per environment
+  // 4. corsWithLogging - Detailed logging
+  // 5. corsMultiTenant - Multi-tenant support
+  // 6. corsSecure - Advanced security
+  // 7. corsDevelopment - Development-friendly (allows all in dev)
+  // 8. true - Allow all origins (simple mode)
 
-  //   // Initialize database and register with WynkJS
-  //   const db = initializeDatabase();
+  const selectedCors = corsDevelopment; // Change this to test different configs
 
-  // Create WynkJS application with all controllers
-  // Option 1: Default format { field: [messages] }
+  console.log("🔒 CORS Configuration: Development Mode");
+  console.log("   - Allows all origins in development");
+  console.log("   - Strict whitelist in production\n");
+
+  // Create WynkJS application with providers and controllers
   const app = WynkFactory.create({
-    controllers: [UserController, ProductController],
-    cors: true,
+    providers: [
+      DatabaseService, // ✅ Database provider - initialized before controllers
+    ],
+    controllers: [UserController, ProductController, CorsTestController],
+    cors: selectedCors,
     logger: true,
     validationErrorFormatter: new DetailedErrorFormatter(),
   });
@@ -59,7 +86,9 @@ async function bootstrap() {
   // Register global exception filter
   // CustomExceptionFilter handles all exceptions with production/development modes
   app.useGlobalFilters(
-    new CustomExceptionFilter() // Handles all HttpException and unknown errors
+    process.env.NODE_ENV === "production"
+      ? new DatabaseExceptionFilter()
+      : new GlobalExceptionFilter()
   );
 
   // Start server

@@ -30,16 +30,19 @@ The CLI will prompt you to configure:
 ```
 my-wynkjs-app/
 ├── src/
-│   ├── controllers/
-│   │   └── user.controller.ts    # Example CRUD controller
-│   ├── services/
-│   │   └── user.service.ts       # Example service with DI
-│   ├── dto/
-│   │   └── user.dto.ts           # Validation schemas
-│   └── index.ts                   # Application entry point
-├── .eslintrc.json                 # ESLint configuration
-├── .prettierrc                    # Prettier configuration
-├── tsconfig.json                  # TypeScript configuration
+│   ├── modules/
+│   │   └── user/
+│   │       ├── user.controller.ts    # Example CRUD controller
+│   │       ├── user.service.ts       # Example service with DI
+│   │       ├── user.dto.ts           # Validation schemas with custom errors
+│   │       ├── user.controller.test.ts # Unit tests for controller
+│   │       └── user.service.test.ts    # Unit tests for service
+│   ├── e2e/
+│   │   └── user.e2e.test.ts          # End-to-end API tests
+│   └── index.ts                       # Application entry point
+├── .eslintrc.json                     # ESLint configuration
+├── .prettierrc                        # Prettier configuration
+├── tsconfig.json                      # TypeScript configuration
 ├── .gitignore
 ├── .env.example
 ├── package.json
@@ -66,10 +69,14 @@ All generated projects include:
 
 The generated project includes a complete working example:
 
-- **User Controller** - CRUD operations with dependency injection
-- **User Service** - Business logic layer
-- **User DTOs** - Request validation with WynkJS DTO builder
-- **Proper TypeScript types** - Full type safety
+- **User Module** - Complete module with controller, service, DTO, and tests
+  - `user.controller.ts` - CRUD operations with dependency injection
+  - `user.service.ts` - Business logic layer
+  - `user.dto.ts` - Request validation with custom error messages
+  - `user.controller.test.ts` - Unit tests for controller
+  - `user.service.test.ts` - Unit tests for service
+- **E2E Tests** - End-to-end API testing with Bun's test runner
+- **Proper TypeScript types** - Full type safety and IntelliSense
 
 ## 🎯 Quick Start After Creation
 

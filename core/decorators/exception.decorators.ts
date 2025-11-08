@@ -84,6 +84,10 @@ export class HttpException extends Error {
     this.name = "HttpException";
   }
 
+  get status(): number {
+    return this.statusCode;
+  }
+
   getStatus(): number {
     return this.statusCode;
   }
@@ -229,14 +233,26 @@ export async function executeExceptionFilters(
     );
 
     if (!catchTypes || catchTypes.length === 0) {
-      // Catches all exceptions
-      return filterInstance.catch(exception, context);
+      // Catches all exceptions - try it
+      try {
+        return await filterInstance.catch(exception, context);
+      } catch (err) {
+        // Filter didn't handle it, try next filter
+        exception = err;
+        continue;
+      }
     }
 
     // Check if exception matches any of the catch types
     for (const catchType of catchTypes) {
       if (exception instanceof catchType) {
-        return filterInstance.catch(exception, context);
+        try {
+          return await filterInstance.catch(exception, context);
+        } catch (err) {
+          // Filter didn't handle it, try next filter
+          exception = err;
+          continue;
+        }
       }
     }
   }
@@ -294,8 +310,6 @@ export class AllExceptions implements WynkExceptionFilter {
     };
   }
 }
-
-
 
 /**
  * Authentication Exception Filter - Handles auth errors
@@ -368,8 +382,6 @@ export class AuthorizationException
     };
   }
 }
-
-
 
 /**
  * Rate Limit Exception Filter - Handles rate limit errors

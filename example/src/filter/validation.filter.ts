@@ -47,7 +47,7 @@ export class ValidationExceptionFilter implements WynkExceptionFilter {
     if (!exception) return false;
 
     // Check if it's a validation error by looking at the error structure
-    // Elysia validation errors have a specific message format
+    // WynkJS validation errors have a specific message format
     if (exception.message && typeof exception.message === "string") {
       // Try to parse the message as JSON
       try {

@@ -2,14 +2,14 @@
 
 <div align="center">
 
-**A high-performance TypeScript framework built on Elysia for Bun with elegant decorator-based architecture**
+**A high-performance TypeScript first framework built for Bun with Elegant Decorator-Based Architecture**
 
 [![npm version](https://img.shields.io/npm/v/wynkjs.svg)](https://www.npmjs.com/package/wynkjs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-1.0+-black.svg)](https://bun.sh/)
 
-_10x faster than Express/NestJs, built for modern TypeScript development on Bun_ ⚡
+_10x faster than Express/NestJs, built for modern TypeScript development for Bun_ ⚡
 
 [Quick Start](#-quick-start) • [CLI Tools](#️-cli-tools) • [Features](#-features--examples) • [Documentation](#-documentation)
 
@@ -19,31 +19,17 @@ _10x faster than Express/NestJs, built for modern TypeScript development on Bun_
 
 ## About
 
-WynkJS is a modern, TypeScript-first web framework that brings elegant decorator-based architecture to the blazing-fast Elysia runtime built for **Bun**. It features familiar concepts—controllers, dependency injection, guards, pipes, interceptors, and exception filters—designed for building high‑performance REST APIs and backends on **Bun**. WynkJS embraces ESM, ships first-class types, and keeps things simple so you can move fast without the bloat.
+WynkJS is a modern, TypeScript-first web framework alternative to NestJs that brings Elegant Decorator-Based Architecture to the blazing-fast Elysia runtime built for **Bun**. It features familiar concepts—**Controllers, Dependency Injection, Guards, Pipes, Interceptors, and Exception Filters**—designed for building high‑performance REST APIs and backends on **Bun**. WynkJS embraces ESM, ships first-class types, and keeps things simple so you can move fast without the bloat.
 
-**🚀 Get Started in 30 Seconds:**
-
-```bash
-bunx create-wynkjs        # Create new project
-cd my-wynkjs-app          # Navigate to project
-bun run dev               # Start server with hot reload
-```
-
-Then generate your first API module:
-
-```bash
-wynkjs g m product        # Generate complete CRUD module
-```
-
-Keywords: Bun framework, Elysia framework, TypeScript decorators, dependency injection (DI), guards, pipes, interceptors, exception filters, fast web framework, REST API, backend, modern TypeScript.
+Keywords: Bun framework, Fast web server, TypeScript decorators, dependency injection (DI), guards, pipes, interceptors, exception filters, fast web framework, REST API, backend, modern TypeScript.
 
 ---
 
 ## ✨ Why WynkJS?
 
-WynkJS combines the **speed of Elysia** with an **elegant decorator-based architecture**, giving you the best of both worlds:
+WynkJS combines the **speed of Elysia** with an **Elegant Decorator-Based Architecture**, giving you the best of both worlds:
 
-- 🚀 **20x Faster** - Built on Elysia, one of the fastest web frameworks for Bun
+- 🚀 **10x Faster** - One of the fastest web frameworks for Bun
 - 🎨 **Decorator-Based** - Clean, intuitive decorator syntax for TypeScript
 - 💉 **Dependency Injection** - Built-in DI (no need to import reflect-metadata!)
 - 🔒 **TypeScript First** - TypeScript is mandatory, not optional. Full type safety and IntelliSense support
@@ -54,60 +40,98 @@ WynkJS combines the **speed of Elysia** with an **elegant decorator-based archit
 
 ---
 
-## 📦 Installation
+## 🚀 Get Started in 30 Seconds:
 
-**Requirements:** Bun 1.0 or higher
+### 📦 create-wynkjs - Project Scaffolding
 
-### Quick Start (Recommended)
-
-Create a new WynkJS project with all best practices:
+Quickly scaffold a new WynkJS project with best practices:
 
 ```bash
+# Create a new project
 bunx create-wynkjs
 # or
 npx create-wynkjs
 ```
 
-This will scaffold a complete **TypeScript** project with:
+**What you get:**
 
-- ✅ TypeScript (strict mode, decorators enabled)
-- ✅ ESLint + Prettier (optional)
-- ✅ Hot reload with `bun --watch`
-- ✅ Example code (controllers, services, DTOs)
-- ✅ Git hooks (optional)
+- ✅ **TypeScript** - Strict mode with decorators enabled (mandatory)
+- ✅ **ESLint** - Code linting with TypeScript rules (optional)
+- ✅ **Prettier** - Code formatting (optional)
+- ✅ **Husky** - Git hooks for pre-commit checks (optional)
+- ✅ **Hot Reload** - `bun --watch` for instant feedback
+- ✅ **Working Example** - Complete CRUD controller, service, and DTOs
 
-### Manual Installation
+**Generated Project Structure:**
 
-Add to an existing project:
-
-```bash
-bun add wynkjs elysia
+```
+my-wynkjs-app/
+├── src/
+│   ├── modules/
+│   │   └── user/
+│   │       ├── user.controller.ts
+│   │       ├── user.service.ts
+│   │       └── user.dto.ts
+│   └── index.ts
+├── .eslintrc.json
+├── .prettierrc
+├── tsconfig.json
+└── package.json
 ```
 
-**Note**: WynkJS is built specifically for **Bun**. It leverages Elysia's performance optimizations that are designed for Bun runtime. ✨
+**Available Scripts:**
 
----
+- `bun run dev` - Development with hot reload
+- `bun run start` - Production server
+- `bun run build` - Build TypeScript
+- `bun run lint` - Run ESLint
+- `bun run format` - Format with Prettier
 
-## 🚀 Quick Start
+[Learn more about create-wynkjs](./packages/create-wynkjs/README.md)
 
-### 1. Create Your DTOs (Data Transfer Objects)
+**Example:**
+
+```bash
+bunx create-wynkjs
+# Choose project name: my-api
+# Add ESLint? Yes
+# Add Prettier? Yes
+# Add Husky? No
+
+cd my-api
+bun run dev
+# 🚀 Server running on http://localhost:3000
+```
+
+### 1. Find Your DTOs (Data Transfer Objects)
 
 ```typescript
 // user.dto.ts
 import { DTO, CommonDTO } from "wynkjs";
 
 export const CreateUserDTO = DTO.Strict({
-  name: DTO.Optional(DTO.String({ minLength: 2, maxLength: 50 })),
+  name: DTO.Optional(
+    DTO.String({
+      maxLength: 50,
+      error: "Name must be between 2 and 50 characters",
+    })
+  ),
   email: CommonDTO.Email({
     description: "User email address",
+    error: "Please provide a valid email address",
   }),
   mobile: DTO.Optional(
     DTO.String({
       pattern: "^[6-9]{1}[0-9]{9}$",
-      errorMessage: "Invalid mobile number",
+      error: "Invalid mobile number format",
     })
   ),
-  age: DTO.Optional(DTO.Number({ minimum: 18 })),
+  age: DTO.Optional(
+    DTO.Number({
+      minimum: 18,
+      error: "Age must be at least 18 years",
+    })
+  ),
 });
 
 export interface CreateUserType {
@@ -126,7 +150,7 @@ export interface ParamIdType {
 }
 ```
 
-### 2. Create a Service with Dependency Injection
+### 2. Find Your Service with Dependency Injection
 
 ```typescript
 // email.service.ts
@@ -141,7 +165,7 @@ export class EmailService {
 }
 ```
 
-### 3. Create Your Controller
+### 3. Find Your Controller
 
 ```typescript
 // user.controller.ts
@@ -221,9 +245,9 @@ console.log("🚀 Server running on http://localhost:3000");
 ### 5. Run Your Server
 
 ```bash
-bun run index.ts
+bun run start
 # or with --watch for hot reload
-bun --watch index.ts
+bun run dev
 ```
 
 ### 6. Test Your API
@@ -254,25 +278,56 @@ That's it! 🎉
 
 ### HTTP Methods
 
+All HTTP method decorators support both **string** and **object** formats:
+
 ```typescript
-@Get(path?: string)        // GET request
-@Post(path?: string)       // POST request
-@Put(path?: string)        // PUT request
-@Patch(path?: string)      // PATCH request
-@Delete(path?: string)     // DELETE request
-@Options(path?: string)    // OPTIONS request
-@Head(path?: string)       // HEAD request
+// Simple string format
+@Get(path?: string)
+@Post(path?: string)
+@Put(path?: string)
+@Patch(path?: string)
+@Delete(path?: string)
+@Options(path?: string)
+@Head(path?: string)
+
+// Object format with validation
+@Get({ path?: string, params?: Schema, query?: Schema })
+@Post({ path?: string, body?: Schema, params?: Schema, query?: Schema })
+@Put({ path?: string, body?: Schema, params?: Schema, query?: Schema })
+@Patch({ path?: string, body?: Schema, params?: Schema, query?: Schema })
+@Delete({ path?: string, params?: Schema, query?: Schema })
+```
+
+**Examples:**
+
+```typescript
+// Simple string path
+@Get("/users")
+async findAll() { }
+
+// Object with body validation
+@Post({ path: "/users", body: CreateUserDTO })
+async create(@Body() body: CreateUserType) { }
+
+// Object with multiple validations
+@Post({
+  path: "/:id1/:id2",
+  body: CreateUserDTO,
+  params: MultiParamDto,
+  query: UserQueryDto
+})
+async create(@Body() body, @Param("id1") id1, @Query() query) { }
 ```
 
 ### Parameter Decorators
 
 ```typescript
-@Param(key?: string)       // Route parameters
-@Body()                    // Request body
-@Query(key?: string)       // Query parameters
-@Headers(key?: string)     // Request headers
-@Req()                     // Full request object
-@Res()                     // Full response object
+@Param(key?: string)       // Route parameters (single or all)
+@Body()                    // Request body (validated by decorator schema)
+@Query(key?: string)       // Query parameters (single or all)
+@Headers(key?: string)     // Request headers (single or all)
+@Req()                     // Full Elysia request object
+@Res()                     // Full Elysia response object
 ```
 
 ### Route Options
@@ -298,40 +353,6 @@ That's it! 🎉
 ## 🛠️ CLI Tools
 
 WynkJS provides powerful CLI tools to speed up your development workflow:
-
-### 📦 create-wynkjs - Project Scaffolding
-
-Quickly scaffold a new WynkJS project with best practices:
-
-```bash
-# Create a new project
-bunx create-wynkjs
-# or
-npx create-wynkjs
-```
-
-**What you get:**
-
-- ✅ **TypeScript** - Strict mode with decorators enabled (mandatory)
-- ✅ **ESLint** - Code linting with TypeScript rules (optional)
-- ✅ **Prettier** - Code formatting (optional)
-- ✅ **Husky** - Git hooks for pre-commit checks (optional)
-- ✅ **Hot Reload** - `bun --watch` for instant feedback
-- ✅ **Working Example** - Complete CRUD controller, service, and DTOs
-
-**Example:**
-
-```bash
-bunx create-wynkjs
-# Choose project name: my-api
-# Add ESLint? Yes
-# Add Prettier? Yes
-# Add Husky? No
-
-cd my-api
-bun run dev
-# 🚀 Server running on http://localhost:3000
-```
 
 ### ⚡ wynkjs-cli - Code Generator
 
@@ -450,6 +471,45 @@ Create `wynkjs.config.json` in your project root:
 
 ## 🎯 Features & Examples
 
+### 🌐 Built-in CORS Support
+
+WynkJS includes built-in CORS support - no additional packages needed!
+
+```typescript
+import { WynkFactory, CorsOptions } from "wynkjs";
+
+// Simple: Allow all origins (development)
+const app = WynkFactory.create({
+  controllers: [UserController],
+  cors: true,
+});
+
+// Advanced: Custom CORS with specific origins (production)
+const corsOptions: CorsOptions = {
+  origin: ["https://yourdomain.com", "https://app.yourdomain.com"],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  maxAge: 86400, // 24 hours
+};
+
+const app = WynkFactory.create({
+  controllers: [UserController],
+  cors: corsOptions,
+});
+
+// Dynamic origin validation (NestJS-style)
+const corsOptions: CorsOptions = {
+  origin: (origin: string) => {
+    const allowedOrigins = ["https://yourdomain.com"];
+    return allowedOrigins.includes(origin);
+  },
+  credentials: true,
+};
+```
+
+See [CORS.md](./CORS.md) for complete documentation.
+
 ### 🔒 Authentication with Guards
 
 ```typescript
@@ -561,7 +621,65 @@ export class UserController {
 
 - Capital: `Injectable`, `Inject`, `Singleton`, `AutoInjectable`, `Container`
 
-### 🗃️ Database Integration (Drizzle ORM)
+### � Provider System
+
+WynkJS providers are singleton services that initialize when your app starts. Perfect for database connections, configuration, and external services:
+
+```typescript
+import { Injectable, singleton } from "wynkjs";
+import { drizzle } from "drizzle-orm/bun-sqlite";
+import { Database } from "bun:sqlite";
+
+@Injectable()
+@singleton()
+export class DatabaseService {
+  public db: any;
+  private sqlite: Database;
+
+  // Called automatically when app starts
+  async onModuleInit() {
+    console.log("🔌 Connecting to database...");
+    this.sqlite = new Database("mydb.sqlite", { create: true });
+    this.db = drizzle(this.sqlite);
+    console.log("✅ Database connected");
+  }
+
+  getDb() {
+    return this.db;
+  }
+}
+
+// Register provider in factory
+const app = WynkFactory.create({
+  providers: [DatabaseService], // ✅ Initialized on startup
+  controllers: [UserController],
+});
+
+// Use in controllers/services
+@Injectable()
+@Controller("/users")
+export class UserController {
+  constructor(private dbService: DatabaseService) {}
+
+  @Get("/")
+  async findAll() {
+    const db = this.dbService.getDb();
+    return await db.select().from(userTable);
+  }
+}
+```
+
+**Benefits:**
+
+- ✅ **Automatic Initialization**: Providers init before routes are registered
+- ✅ **Error Handling**: App won't start if provider fails to initialize
+- ✅ **Tight Coupling**: Only registered providers are available
+- ✅ **Lifecycle Hooks**: `onModuleInit()` for setup, `onModuleDestroy()` for cleanup
+- ✅ **Type Safety**: Full TypeScript support with DI
+
+**See [docs-wynkjs/PROVIDERS.md](./docs-wynkjs/PROVIDERS.md) for complete guide**
+
+### �🗃️ Database Integration (Drizzle ORM)
 
 ```typescript
 import { drizzle } from "drizzle-orm/bun-sqlite";
@@ -592,25 +710,38 @@ export class UserService {
 
 ### 📝 Request Validation
 
-WynkJS provides automatic request validation with **full IntelliSense support** and customizable error formats:
+WynkJS provides automatic request validation with **full IntelliSense support**, **custom error messages**, and customizable error formats:
 
 ```typescript
 // user.dto.ts
 import { DTO, CommonDTO } from "wynkjs";
 
 // ✨ Full IntelliSense when typing DTO.String(), DTO.Number(), etc!
+// ✨ Add custom error messages with the `error` property
 export const CreateUserDTO = DTO.Strict({
-  name: DTO.Optional(DTO.String({ minLength: 2, maxLength: 50 })),
+  name: DTO.Optional(
+    DTO.String({
+      minLength: 2,
+      maxLength: 50,
+      error: "Name must be between 2 and 50 characters",
+    })
+  ),
   email: CommonDTO.Email({
     description: "User email address",
+    error: "Please provide a valid email address",
   }),
   mobile: DTO.Optional(
     DTO.String({
       pattern: "^[6-9]{1}[0-9]{9}$",
-      errorMessage: "Invalid mobile number",
+      error: "Invalid mobile number format",
     })
   ),
-  age: DTO.Optional(DTO.Number({ minimum: 18 })),
+  age: DTO.Optional(
+    DTO.Number({
+      minimum: 18,
+      error: "Age must be at least 18 years",
+    })
+  ),
 });
 
 export interface CreateUserType {
@@ -621,8 +752,19 @@ export interface CreateUserType {
 }
 
 export const UserUpdateDTO = DTO.Strict({
-  email: DTO.Optional(DTO.String({ format: "email", minLength: 5 })),
-  age: DTO.Optional(DTO.Number({ minimum: 18 })),
+  email: DTO.Optional(
+    DTO.String({
+      format: "email",
+      minLength: 5,
+      error: "Email must be valid and at least 5 characters",
+    })
+  ),
+  age: DTO.Optional(
+    DTO.Number({
+      minimum: 18,
+      error: "Age must be at least 18 years",
+    })
+  ),
 });
 
 export interface UserUpdateType {
@@ -883,7 +1025,7 @@ app.useGlobalFilters(
 | Feature          | Formatters                                         | Filters                    |
 | ---------------- | -------------------------------------------------- | -------------------------- |
 | **Purpose**      | Format validation errors                           | Handle runtime exceptions  |
-| **When?**        | During request validation (TypeBox/Elysia)         | When exceptions are thrown |
+| **When?**        | During request validation (TypeBox)                | When exceptions are thrown |
 | **Registration** | `WynkFactory.create({ validationErrorFormatter })` | `app.useGlobalFilters()`   |
 | **Example**      | `FormatErrorFormatter`                             | `DatabaseExceptionFilter`  |
 
@@ -1017,145 +1159,6 @@ my-wynk-app/
 
 ---
 
-## 🎨 Complete Working Example
-
-Here's a complete, production-ready example with all features:
-
-```typescript
-// dto/user.dto.ts
-import { DTO, CommonDTO } from "wynkjs";
-
-export const CreateUserDTO = DTO.Strict({
-  name: DTO.Optional(DTO.String({ minLength: 2, maxLength: 50 })),
-  email: CommonDTO.Email({ description: "User email address" }),
-  mobile: DTO.Optional(
-    DTO.String({
-      pattern: "^[6-9]{1}[0-9]{9}$",
-      errorMessage: "Invalid mobile number",
-    })
-  ),
-  age: DTO.Optional(DTO.Number({ minimum: 18 })),
-});
-
-export const UserIdDto = DTO.Object({
-  id: DTO.String({ minLength: 2, maxLength: 50 }),
-});
-
-export interface CreateUserType {
-  name?: string;
-  email: string;
-  mobile?: string;
-  age?: number;
-}
-
-// services/email.service.ts
-import { Injectable } from "wynkjs";
-
-@Injectable()
-export class EmailService {
-  async sendWelcomeEmail(email: string, userName: string): Promise<void> {
-    console.log(`📧 Sending welcome email to ${email}`);
-    // Your email sending logic (SendGrid, AWS SES, etc.)
-  }
-}
-
-// controllers/user.controller.ts
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Body,
-  Param,
-  Injectable,
-  NotFoundException,
-} from "wynkjs";
-import { CreateUserDTO, UserIdDto } from "../dto/user.dto";
-import type { CreateUserType } from "../dto/user.dto";
-import { EmailService } from "../services/email.service";
-
-@Injectable()
-@Controller("/users")
-export class UserController {
-  constructor(private emailService: EmailService) {}
-
-  @Get("/")
-  async list() {
-    return { users: ["Alice", "Bob", "Charlie"] };
-  }
-
-  @Post({ path: "/", body: CreateUserDTO })
-  async create(@Body() body: CreateUserType) {
-    // Send welcome email using injected service
-    if (body.email && body.name) {
-      await this.emailService.sendWelcomeEmail(body.email, body.name);
-    }
-    return { message: "User created", data: body };
-  }
-
-  @Get({ path: "/:id", params: UserIdDto })
-  async findOne(@Param("id") id: string) {
-    if (id === "nonexistent") {
-      throw new NotFoundException("User not found");
-    }
-    return { user: { id, name: "Alice" } };
-  }
-
-  @Patch({ path: "/:id", params: UserIdDto })
-  async update(@Param("id") id: string, @Body() body: any) {
-    return { message: "User updated", id, data: body };
-  }
-}
-
-// index.ts
-import {
-  WynkFactory,
-  DetailedErrorFormatter,
-  GlobalExceptionFilter,
-  DatabaseExceptionFilter,
-} from "wynkjs";
-import { UserController } from "./controllers/user.controller";
-
-const app = WynkFactory.create({
-  controllers: [UserController],
-  validationErrorFormatter: new DetailedErrorFormatter(), // ✅ Format validation errors
-});
-
-// Register global exception filters
-app.useGlobalFilters(
-  new DatabaseExceptionFilter(), // Handles database errors
-  new GlobalExceptionFilter() // Catch-all for other exceptions
-);
-
-await app.listen(3000);
-console.log("🚀 Server running on http://localhost:3000");
-```
-
-**Test the API:**
-
-```bash
-# List all users
-curl http://localhost:3000/users
-
-# Create a new user (with validation and email)
-curl -X POST http://localhost:3000/users \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Alice","email":"alice@example.com","age":25}'
-
-# Get user by ID
-curl http://localhost:3000/users/123
-
-# Update user
-curl -X PATCH http://localhost:3000/users/123 \
-  -H "Content-Type: application/json" \
-  -d '{"email":"newemail@example.com"}'
-
-# Test 404 exception
-curl http://localhost:3000/users/nonexistent
-```
-
----
-
 ## 📖 API Reference
 
 ### Core Decorators
@@ -1171,15 +1174,56 @@ export class UserController {
 }
 ```
 
-#### `@Get(path?: string)` / `@Post()` / `@Patch()` / `@Delete()`
+#### HTTP Method Decorators
 
-HTTP method decorators with optional path and options.
+All HTTP methods support both **string** and **object** formats:
+
+**String format:**
 
 ```typescript
-@Get("/")                    // GET /users
-@Post({ path: "/", body: CreateUserDTO })  // POST with validation
-@Patch({ path: "/:id", params: UserIdDto }) // PATCH with param validation
+@Get("/")                              // GET /users
+@Post("/")                             // POST /users
+@Patch("/:id")                         // PATCH /users/:id
 ```
+
+**Object format with validation:**
+
+```typescript
+@Get({ path: "/" })                    // GET with options
+
+@Post({
+  path: "/",
+  body: CreateUserDTO                  // POST with body validation
+})
+
+@Patch({
+  path: "/:id",
+  params: UserIdDto,                   // PATCH with param validation
+  body: UpdateUserDTO                  // PATCH with body validation
+})
+
+@Get({
+  path: "/",
+  query: UserQueryDto                  // GET with query validation
+})
+
+@Post({
+  path: "/:id1/:id2",
+  body: CreateUserDTO,                 // Multiple validations
+  params: MultiParamDto,
+  query: UserQueryDto
+})
+```
+
+**Available HTTP methods:**
+
+- `@Get()` - GET requests (params, query)
+- `@Post()` - POST requests (body, params, query)
+- `@Put()` - PUT requests (body, params, query)
+- `@Patch()` - PATCH requests (body, params, query)
+- `@Delete()` - DELETE requests (params, query)
+- `@Options()` - OPTIONS requests
+- `@Head()` - HEAD requests
 
 #### `@Body()` / `@Param(key?)` / `@Query(key?)`
 
@@ -1241,61 +1285,12 @@ throw new InternalServerErrorException("Error"); // 500
 
 ---
 
-## �️ CLI Tool
-
-### create-wynkjs
-
-Quickly scaffold a new WynkJS project with best practices:
-
-```bash
-bunx create-wynkjs
-# or
-npx create-wynkjs
-```
-
-**Features:**
-
-- 🎯 Interactive project setup
-- ✅ TypeScript configuration (strict mode)
-- 🔍 ESLint with TypeScript rules
-- 💅 Prettier for code formatting
-- 🪝 Husky for Git hooks (optional)
-- 🔥 Hot reload with `bun --watch` (faster than nodemon)
-- 📝 Complete working example (CRUD API)
-
-**Generated Project Structure:**
-
-```
-my-wynkjs-app/
-├── src/
-│   ├── modules/
-│   │   └── user/
-│   │       ├── user.controller.ts
-│   │       ├── user.service.ts
-│   │       └── user.dto.ts
-│   └── index.ts
-├── .eslintrc.json
-├── .prettierrc
-├── tsconfig.json
-└── package.json
-```
-
-**Available Scripts:**
-
-- `bun run dev` - Development with hot reload
-- `bun run start` - Production server
-- `bun run build` - Build TypeScript
-- `bun run lint` - Run ESLint
-- `bun run format` - Format with Prettier
-
-[Learn more about create-wynkjs](./packages/create-wynkjs/README.md)
-
----
-
 ## 🔗 Resources
 
 - 📚 [Full Documentation](https://github.com/wynkjs/wynkjs-core)
-- 🏗️ [Architecture Guide](./ARCHITECTURE.md) - **NEW!** Complete guide to formatters vs filters
+- 💡 [Example Code](./docs-wynkjs/EXAMPLE_GUIDE.md)
+- 🏗️ [Architecture Guide](./ARCHITECTURE.md) - Complete guide to formatters vs filters
+- 🔧 [Provider System](./docs-wynkjs/PROVIDERS.md) - **NEW!** Database, config, and service providers
 - 🔄 [Migration Guide](./MIGRATION.md) - Upgrading from older versions
 - 🚀 [CLI Tool (create-wynkjs)](./packages/create-wynkjs/README.md)
 - 🎨 [Validation Formatters](./docs-wynkjs/VALIDATION_FORMATTERS.md)
@@ -1337,33 +1332,21 @@ If you find a bug or have a feature request:
    bun install
    ```
 
-3. **Build the packages**
+3. **Create a branch**
 
-   ```bash
-   # Build main framework
-   bun run build
-
-   # Build CLI tools
-   cd packages/create-wynkjs && bun run build
-   cd ../wynkjs-cli && bun run build
-   ```
-
-4. **Create a branch**
    ```bash
    git checkout -b feature/your-feature-name
    # or
    git checkout -b fix/bug-description
    ```
 
-#### Development Workflow
-
-1. **Make your changes** in the appropriate package:
+4. **Make your changes** in the appropriate package:
 
    - `core/` - Core framework decorators and utilities
    - `packages/create-wynkjs/` - Project scaffolding CLI
    - `packages/wynkjs-cli/` - Code generator CLI
 
-2. **Test your changes**
+5. **Test your changes**
 
    ```bash
    # Test in the example project
@@ -1374,7 +1357,7 @@ If you find a bug or have a feature request:
    cd /tmp && bunx /path/to/wynkjs-core/packages/create-wynkjs
    ```
 
-3. **Build all packages**
+6. **Build all packages**
 
    ```bash
    # From project root
@@ -1383,7 +1366,7 @@ If you find a bug or have a feature request:
    cd ../wynkjs-cli && bun run build
    ```
 
-4. **Commit your changes**
+7. **Commit your changes**
 
    ```bash
    git add .
@@ -1401,7 +1384,7 @@ If you find a bug or have a feature request:
    - `test:` - Adding tests
    - `chore:` - Maintenance tasks
 
-5. **Push and create a Pull Request**
+8. **Push and create a Pull Request**
 
    ```bash
    git push origin feature/your-feature-name

@@ -19,9 +19,9 @@ export interface ArgumentMetadata {
 }
 
 /**
- * Validation Error structure (Elysia format)
+ * Validation Error structure (WynkJS format)
  */
-export interface ElysiaValidationError {
+export interface WynkJSValidationError {
   type: "validation";
   on: "body" | "params" | "query" | "headers";
   property: string;
@@ -41,17 +41,17 @@ export interface ElysiaValidationError {
 
 /**
  * Base Validation Pipe
- * Handles Elysia validation errors and formats them
+ * Handles WynkJS validation errors and formats them
  */
 export class ValidationPipe implements ValidationPipeTransform {
   protected options: {
-    exceptionFactory?: (errors: ElysiaValidationError) => any;
+    exceptionFactory?: (errors: WynkJSValidationError) => any;
     transform?: boolean;
     whitelist?: boolean;
   };
 
   constructor(options?: {
-    exceptionFactory?: (errors: ElysiaValidationError) => any;
+    exceptionFactory?: (errors: WynkJSValidationError) => any;
     transform?: boolean;
     whitelist?: boolean;
   }) {
@@ -59,14 +59,14 @@ export class ValidationPipe implements ValidationPipeTransform {
   }
 
   /**
-   * Transform method (not used for Elysia validation, but required by interface)
+   * Transform method (not used for WynkJS validation, but required by interface)
    */
   transform(value: any, metadata: ArgumentMetadata): any {
     return value;
   }
 
   /**
-   * Format Elysia validation error
+   * Format WynkJS validation error
    * This is called by the exception filter
    */
   formatError(exception: any): any {
@@ -83,9 +83,9 @@ export class ValidationPipe implements ValidationPipeTransform {
   }
 
   /**
-   * Parse Elysia validation error from exception
+   * Parse WynkJS validation error from exception
    */
-  protected parseValidationError(exception: any): ElysiaValidationError {
+  protected parseValidationError(exception: any): WynkJSValidationError {
     let validationData: any;
 
     if (typeof exception.message === "string") {
@@ -98,14 +98,14 @@ export class ValidationPipe implements ValidationPipeTransform {
       validationData = exception;
     }
 
-    return validationData as ElysiaValidationError;
+    return validationData as WynkJSValidationError;
   }
 
   /**
    * Default error formatting with custom errorMessage support
    */
   protected defaultFormatError(
-    error: ElysiaValidationError,
+    error: WynkJSValidationError,
     schemaKey?: string
   ): any {
     const errors: Array<{ field: string; message: string; value?: any }> = [];
@@ -159,7 +159,7 @@ export class ValidationPipe implements ValidationPipeTransform {
 export class FormatErrorPipe extends ValidationPipe {
   constructor() {
     super({
-      exceptionFactory: (error: ElysiaValidationError) => {
+      exceptionFactory: (error: WynkJSValidationError) => {
         const formattedErrors: Record<string, string[]> = {};
 
         if (error.errors && error.errors.length > 0) {
@@ -198,7 +198,7 @@ export class FormatErrorPipe extends ValidationPipe {
 export class SimpleErrorPipe extends ValidationPipe {
   constructor() {
     super({
-      exceptionFactory: (error: ElysiaValidationError) => {
+      exceptionFactory: (error: WynkJSValidationError) => {
         const messages: string[] = [];
 
         if (error.errors && error.errors.length > 0) {
@@ -232,7 +232,7 @@ export class SimpleErrorPipe extends ValidationPipe {
 export class DetailedErrorPipe extends ValidationPipe {
   constructor() {
     super({
-      exceptionFactory: (error: ElysiaValidationError) => {
+      exceptionFactory: (error: WynkJSValidationError) => {
         const errors: Array<{
           field: string;
           message: string;

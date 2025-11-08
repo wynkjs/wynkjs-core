@@ -8,12 +8,20 @@
     "test:e2e": "bun test test/e2e/",
     "test:all": "bun test src/modules/ && bun test test/e2e/",
     "dev": "bun  --watch src/index.ts",
-    "start": "bun src/index.ts"
+    "start": "bun src/index.ts",
+    "build": "bun build src/index.ts --outdir=dist --target=bun",
+    "build:run": "bun run dist/index.js"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "wynkjs": "^1.0.0"
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.44.7",
+    "pg": "^8.16.3",
+    "wynkjs": "file:.."
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.6"
   }
 }

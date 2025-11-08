@@ -1,6 +1,55 @@
 # Validation Error Formatters
 
-WynkJS provides multiple built-in formatters for validation errors, allowing you to choose the format that best fits your API design.
+WynkJS provides multiple built-in formatters for validation errors, allowing you to choose the format that best fits your API design. Additionally, you can customize error messages directly in your DTOs using the `error` property.
+
+## Custom Error Messages
+
+You can provide user-friendly error messages in your DTOs:
+
+```typescript
+import { DTO, CommonDTO } from "wynkjs";
+
+export const CreateUserDTO = DTO.Strict({
+  name: DTO.String({
+    minLength: 2,
+    maxLength: 50,
+    error: "Name must be between 2 and 50 characters",
+  }),
+  email: CommonDTO.Email({
+    error: "Please provide a valid email address",
+  }),
+  age: DTO.Optional(
+    DTO.Number({
+      minimum: 18,
+      error: "You must be at least 18 years old",
+    })
+  ),
+});
+```
+
+**Without custom error messages:**
+
+```json
+{
+  "errors": {
+    "email": ["Expected string to match 'email' format"],
+    "age": ["Expected number greater or equal to 18"]
+  }
+}
+```
+
+**With custom error messages:**
+
+```json
+{
+  "errors": {
+    "email": ["Please provide a valid email address"],
+    "age": ["You must be at least 18 years old"]
+  }
+}
+```
+
+---
 
 ## Available Formatters
 

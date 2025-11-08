@@ -152,7 +152,7 @@ export class ValidationPipe implements WynkPipeTransform {
   }
 
   /**
-   * Format Elysia validation error
+   * Format WynkJS validation error
    * Called by ValidationExceptionFilter
    */
   formatError(exception: any): any {
@@ -168,7 +168,7 @@ export class ValidationPipe implements WynkPipeTransform {
   }
 
   /**
-   * Parse validation error from Elysia exception
+   * Parse validation error from WynkJS exception
    */
   private parseValidationError(exception: any): any {
     let validationData: any;

@@ -1,6 +1,6 @@
 {
   "name": "wynkjs",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A high-performance TypeScript framework built on Elysia for Bun with elegant decorator-based architecture - 10x faster than Express/NestJS",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -42,15 +42,14 @@
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
-    "test": "bun test"
+    "test": "bun test",
+    "test:all": "bun test tests/",
+    "test:core": "bash tests/test-core.sh",
+    "test:watch": "bun test tests/ --watch",
+    "test:coverage": "bun test tests/ --coverage"
   },
-  "peerDependencies": {
-    "elysia": "^1.0.0",
-    "reflect-metadata": "^0.2.2"
-  },
+  "peerDependencies": {},
   "devDependencies": {
-    "elysia": "^1.0.0",
-    "reflect-metadata": "^0.2.2",
     "@types/bun": "latest",
     "typescript": "^5.0.0"
   },
@@ -69,6 +68,9 @@
     "LICENSE"
   ],
   "dependencies": {
+    "elysia": "^1.0.0",
+    "reflect-metadata": "^0.2.2",
+    "@elysiajs/cors": "^1.4.0",
     "tsyringe": "^4.10.0"
   }
 }

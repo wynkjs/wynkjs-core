@@ -15,6 +15,12 @@ import {
 import { ParamMetadata } from "./decorators/param.decorators";
 import { ErrorFormatter } from "./decorators/formatter.decorators";
 import { schemaRegistry } from "./schema-registry";
+import { CorsOptions, setupCors } from "./cors";
+import { applyGlobalPrefix, normalizePrefixPath } from "./global-prefix";
+import {
+  buildUltraOptimizedHandler,
+  buildMiddlewareChain,
+} from "./ultra-optimized-handler";
 
 /**
  * Application Factory for WynkJS Framework
@@ -22,24 +28,44 @@ import { schemaRegistry } from "./schema-registry";
  */
 
 export interface ApplicationOptions {
-  cors?: boolean | any;
+  cors?: boolean | CorsOptions;
   globalPrefix?: string;
   logger?: boolean;
   validationErrorFormatter?: ErrorFormatter;
+  providers?: any[]; // Provider classes to register and initialize
 }
 
 export class WynkFramework {
   private app: Elysia;
   private controllers: any[] = [];
+  private providers: any[] = []; // Store registered providers
   private globalGuards: any[] = [];
   private globalInterceptors: any[] = [];
   private globalPipes: any[] = [];
   private globalFilters: any[] = [];
   private validationFormatter?: ErrorFormatter;
+  private shutdownHandlersRegistered = false; // Prevent duplicate signal handlers
+  private globalPrefix?: string; // Store global prefix for route registration
+  private isBuilt = false; // Track if build() has been called
 
   constructor(options: ApplicationOptions = {}) {
     this.app = new Elysia();
     this.validationFormatter = options.validationErrorFormatter;
+
+    // Store global prefix for later use
+    if (options.globalPrefix) {
+      this.globalPrefix = normalizePrefixPath(options.globalPrefix);
+    }
+
+    // Register providers if provided
+    if (options.providers && options.providers.length > 0) {
+      this.providers.push(...options.providers);
+    }
+
+    // Apply CORS configuration
+    if (options.cors) {
+      setupCors(this.app, options.cors);
+    }
 
     // Configure Elysia's error handling for validation errors
     this.app.onError(({ code, error, set, request }) => {
@@ -200,14 +226,10 @@ export class WynkFramework {
       };
     });
 
-    // Apply CORS if enabled
-    if (options.cors) {
-      // CORS configuration would go here
-    }
-
     // Apply global prefix if specified
     if (options.globalPrefix) {
-      // Global prefix handling
+      // Global prefix is handled during route registration
+      console.log(`✅ Global prefix configured: ${this.globalPrefix}`);
     }
 
     return this;
@@ -217,13 +239,30 @@ export class WynkFramework {
    * Static convenience creator to align with documentation examples
    */
   static create(
-    options: ApplicationOptions & { controllers?: any[] } = {}
+    options: ApplicationOptions & {
+      controllers?: any[];
+      providers?: any[];
+    } = {}
   ): WynkFramework {
     const app = new WynkFramework(options);
+
+    // Don't re-register providers/controllers if they were already added in constructor
+    // The constructor already handles options.providers
+
     if (options.controllers && options.controllers.length) {
       app.registerControllers(...options.controllers);
     }
+
     return app;
+  }
+
+  /**
+   * Register providers with the application
+   * Providers are singleton services that are initialized when the app starts
+   */
+  registerProviders(...providers: any[]): this {
+    this.providers.push(...providers);
+    return this;
   }
 
   /**
@@ -267,9 +306,51 @@ export class WynkFramework {
   }
 
   /**
+   * Initialize all registered providers
+   * Providers with onModuleInit() method will be called
+   */
+  private async initializeProviders(): Promise<void> {
+    console.log(`🔧 Initializing ${this.providers.length} providers...`);
+
+    for (const ProviderClass of this.providers) {
+      try {
+        console.log(`  ⚙️  Initializing provider: ${ProviderClass.name}`);
+
+        // Resolve provider instance from DI container
+        const instance: any = container.resolve(ProviderClass);
+
+        // Check if provider has onModuleInit lifecycle hook
+        if (typeof instance.onModuleInit === "function") {
+          await instance.onModuleInit();
+          console.log(`  ✅ ${ProviderClass.name} initialized successfully`);
+        } else {
+          // Just register in container for injection
+          console.log(`  ✅ ${ProviderClass.name} registered in container`);
+        }
+      } catch (error) {
+        console.error(
+          `  ❌ Failed to initialize provider ${ProviderClass.name}:`,
+          error
+        );
+        throw new Error(
+          `Provider initialization failed for ${ProviderClass.name}: ${
+            (error as any).message
+          }`
+        );
+      }
+    }
+
+    console.log(`✅ All providers initialized successfully\n`);
+  }
+
+  /**
    * Build the application - register all routes
    */
   async build(): Promise<Elysia> {
+    // Initialize providers first (database connections, etc.)
+    if (this.providers.length > 0) {
+      await this.initializeProviders();
+    }
     // Register global error handler if filters exist
     if (this.globalFilters.length > 0) {
       this.app.onError(async ({ error, set, request }) => {
@@ -316,7 +397,39 @@ export class WynkFramework {
     for (const ControllerClass of this.controllers) {
       await this.registerController(ControllerClass);
     }
+
+    this.isBuilt = true;
     return this.app;
+  }
+
+  /**
+   * Cleanup all providers when app shuts down
+   * Providers with onModuleDestroy() method will be called
+   */
+  private async destroyProviders(): Promise<void> {
+    console.log(`\n🔧 Cleaning up ${this.providers.length} providers...`);
+
+    for (const ProviderClass of this.providers) {
+      try {
+        // Resolve provider instance from DI container
+        const instance: any = container.resolve(ProviderClass);
+
+        // Check if provider has onModuleDestroy lifecycle hook
+        if (typeof instance.onModuleDestroy === "function") {
+          console.log(`  🧹 Destroying provider: ${ProviderClass.name}`);
+          await instance.onModuleDestroy();
+          console.log(`  ✅ ${ProviderClass.name} destroyed successfully`);
+        }
+      } catch (error) {
+        console.error(
+          `  ❌ Failed to destroy provider ${ProviderClass.name}:`,
+          error
+        );
+        // Continue cleanup even if one provider fails
+      }
+    }
+
+    console.log(`✅ All providers cleaned up\n`);
   }
 
   /**
@@ -326,6 +439,34 @@ export class WynkFramework {
     await this.build();
     this.app.listen(port);
     console.log(`🚀 Application is running on http://localhost:${port}`);
+
+    // Register signal handlers only once to prevent memory leaks
+    if (!this.shutdownHandlersRegistered) {
+      this.shutdownHandlersRegistered = true;
+
+      // Setup graceful shutdown handlers
+      const gracefulShutdown = async (signal: string) => {
+        console.log(`\n📡 Received ${signal}, shutting down gracefully...`);
+
+        try {
+          // Cleanup providers (close database connections, etc.)
+          await this.destroyProviders();
+
+          // Stop the Elysia server
+          await this.app.stop();
+
+          console.log("👋 Application shut down successfully");
+          process.exit(0);
+        } catch (error) {
+          console.error("❌ Error during shutdown:", error);
+          process.exit(1);
+        }
+      };
+
+      // Register signal handlers (only once)
+      process.once("SIGTERM", () => gracefulShutdown("SIGTERM"));
+      process.once("SIGINT", () => gracefulShutdown("SIGINT"));
+    }
   }
 
   /**
@@ -333,6 +474,17 @@ export class WynkFramework {
    */
   getApp(): Elysia {
     return this.app;
+  }
+
+  /**
+   * Handle an HTTP request
+   * Automatically builds the app if not already built
+   */
+  async handle(request: Request): Promise<Response> {
+    if (!this.isBuilt) {
+      await this.build();
+    }
+    return this.app.handle(request);
   }
 
   /**
@@ -372,7 +524,12 @@ export class WynkFramework {
     const controllerUses = Reflect.getMetadata("uses", ControllerClass) || [];
 
     for (const route of routes) {
-      const fullPath = basePath + route.path;
+      // Apply global prefix to route path
+      let fullPath = basePath + route.path;
+      if (this.globalPrefix) {
+        fullPath = this.globalPrefix + fullPath;
+      }
+
       const method = route.method.toLowerCase();
       const methodName = route.methodName;
 
@@ -392,6 +549,12 @@ export class WynkFramework {
 
       const params: ParamMetadata[] =
         Reflect.getMetadata("params", instance, methodName) || [];
+
+      // Sort params once during registration, not on every request
+      if (params.length > 0) {
+        params.sort((a, b) => a.index - b.index);
+      }
+
       const httpCode = Reflect.getMetadata(
         "route:httpCode",
         instance,
@@ -408,16 +571,17 @@ export class WynkFramework {
         methodName
       );
 
-      // Combine guards, interceptors, pipes, filters (global -> controller -> method)
+      // Combine guards, interceptors, pipes, filters
+      // Order: method -> controller -> global (method is innermost/closest to handler)
       const allGuards = [
         ...this.globalGuards,
         ...controllerGuards,
         ...methodGuards,
       ];
       const allInterceptors = [
-        ...this.globalInterceptors,
-        ...controllerInterceptors,
         ...methodInterceptors,
+        ...controllerInterceptors,
+        ...this.globalInterceptors,
       ];
       const allPipes = [
         ...this.globalPipes,
@@ -441,192 +605,23 @@ export class WynkFramework {
         routeOptions.body = bodySchema;
       }
 
-      // Create route handler
-      const handler = async (ctx: any) => {
-        try {
-          // Create execution context
-          const executionContext = createExecutionContext(
-            ctx,
-            instance[methodName],
-            ControllerClass
-          );
-
-          // Execute guards
-          if (allGuards.length > 0) {
-            const canActivate = await executeGuards(
-              allGuards,
-              executionContext
-            );
-            if (!canActivate) {
-              throw new HttpException("Forbidden", 403, "Access denied");
-            }
-          }
-
-          // Prepare handler with parameters and pipes
-          const executeHandler = async () => {
-            // Build arguments for the controller method
-            const args: any[] = [];
-
-            if (params.length === 0) {
-              // No parameter decorators, pass full context
-              args.push(ctx);
-            } else {
-              // Sort params by index
-              params.sort((a, b) => a.index - b.index);
-
-              for (const param of params) {
-                let value: any;
-
-                // Extract value based on type
-                switch (param.type) {
-                  case "body":
-                    value = param.data ? ctx.body?.[param.data] : ctx.body;
-                    break;
-                  case "param":
-                    value = param.data ? ctx.params?.[param.data] : ctx.params;
-                    break;
-                  case "query":
-                    value = param.data ? ctx.query?.[param.data] : ctx.query;
-                    break;
-                  case "headers":
-                    value = param.data
-                      ? ctx.headers?.get?.(param.data) ||
-                        ctx.request?.headers?.get?.(param.data)
-                      : ctx.headers || ctx.request?.headers;
-                    break;
-                  case "request":
-                    value = ctx.request || ctx;
-                    break;
-                  case "response":
-                    value = ctx.set || ctx.response;
-                    break;
-                  case "context":
-                    if (param.data) {
-                      // Access nested property like "session.userId"
-                      const keys = param.data.split(".");
-                      value = keys.reduce((obj, key) => obj?.[key], ctx);
-                    } else {
-                      value = ctx;
-                    }
-                    break;
-                  case "user":
-                    value = param.data ? ctx.user?.[param.data] : ctx.user;
-                    break;
-                  case "file":
-                    value = ctx.body?.file || ctx.file;
-                    break;
-                  case "files":
-                    value = ctx.body?.files || ctx.files;
-                    break;
-                }
-
-                // Apply pipes if any
-                if (param.pipes && param.pipes.length > 0) {
-                  const metadata: ArgumentMetadata = {
-                    type: param.type as any,
-                    data: param.data,
-                  };
-                  value = await executePipes(param.pipes, value, metadata);
-                }
-
-                // Apply global/controller/method pipes
-                if (allPipes.length > 0) {
-                  const metadata: ArgumentMetadata = {
-                    type: param.type as any,
-                    data: param.data,
-                  };
-                  value = await executePipes(allPipes, value, metadata);
-                }
-
-                args[param.index] = value;
-              }
-            }
-
-            // Call controller method
-            return await instance[methodName].apply(instance, args);
-          };
-
-          // Execute interceptors
-          let result: any;
-          if (allInterceptors.length > 0) {
-            result = await executeInterceptors(
-              allInterceptors,
-              executionContext,
-              executeHandler
-            );
-          } else {
-            result = await executeHandler();
-          }
-
-          // Handle redirect
-          if (redirect) {
-            ctx.set.redirect = redirect.url;
-            ctx.set.status = redirect.statusCode;
-            return;
-          }
-
-          // Set custom HTTP code
-          if (httpCode) {
-            ctx.set.status = httpCode;
-          }
-
-          // Set custom headers
-          if (headers) {
-            Object.entries(headers).forEach(([key, value]) => {
-              ctx.set.headers[key] = value as string;
-            });
-          }
-
-          return result;
-        } catch (error) {
-          console.log("🔴 ERROR CAUGHT IN FACTORY");
-          console.log("allFilters.length:", allFilters.length);
-          console.log("Error:", (error as any)?.message);
-
-          // Execute exception filters
-          if (allFilters.length > 0) {
-            console.log("✅ Executing exception filters...");
-            const executionContext = createExecutionContext(
-              ctx,
-              instance[methodName],
-              ControllerClass
-            );
-
-            try {
-              const result = await executeExceptionFilters(
-                allFilters,
-                error,
-                executionContext
-              );
-              if (result) {
-                if (result.statusCode) {
-                  ctx.set.status = result.statusCode;
-                }
-                return result;
-              }
-            } catch (filterError) {
-              // If filter doesn't handle it, continue to default error handling
-              error = filterError;
-            }
-          } else {
-            console.log("❌ No filters registered for this route");
-          }
-
-          // Default error handling
-          if (error instanceof HttpException) {
-            ctx.set.status = error.getStatus();
-            return error.getResponse();
-          }
-
-          // Unknown error
-          ctx.set.status = 500;
-          return {
-            statusCode: 500,
-            message: (error as any).message || "Internal server error",
-            error: "Internal Server Error",
-          };
-        }
-      };
+      // ⚡ ULTRA-OPTIMIZED HANDLER - Use specialized builder
+      // This eliminates nested async/await and IIFEs for maximum performance
+      const handler = buildUltraOptimizedHandler({
+        instance,
+        methodName,
+        ControllerClass,
+        params,
+        allGuards,
+        allInterceptors,
+        allPipes,
+        allFilters,
+        httpCode,
+        headers,
+        redirect,
+        routePath: route.path,
+        routeMethod: method.toUpperCase(),
+      });
 
       // Wrap handler with @Use() middleware if present
       // Combine controller and method middleware
@@ -635,25 +630,7 @@ export class WynkFramework {
       let finalHandler = handler;
 
       if (allUses.length > 0) {
-        console.log(`🔗 Building middleware chain for ${method} ${fullPath}:`);
-        console.log(`   Middleware count: ${allUses.length}`);
-        allUses.forEach((m, i) =>
-          console.log(`   [${i}] ${m.name || "anonymous"}`)
-        );
-
-        // Build middleware chain using reduce (O(n) complexity)
-        // Builds from right to left: handler <- middleware[n-1] <- ... <- middleware[0]
-        // Executes left to right: middleware[0] -> ... -> middleware[n-1] -> handler
-        finalHandler = allUses.reduceRight((next, middleware, index) => {
-          return async (ctx: any) => {
-            console.log(
-              `▶️ Executing middleware [${index}]: ${
-                middleware.name || "anonymous"
-              }`
-            );
-            return await middleware(ctx, () => next(ctx));
-          };
-        }, handler);
+        finalHandler = buildMiddlewareChain(handler, allUses);
       }
 
       // Register route with Elysia
@@ -711,9 +688,15 @@ export function createApp(options: ApplicationOptions = {}): WynkFramework {
  */
 export class WynkFactory {
   static create(
-    options: ApplicationOptions & { controllers?: any[] } = {}
+    options: ApplicationOptions & {
+      controllers?: any[];
+      providers?: any[];
+    } = {}
   ): WynkFramework {
     const app = new WynkFramework(options);
+
+    // Don't re-register providers if they were already added in constructor
+    // The constructor already handles options.providers
 
     if (options.controllers) {
       app.registerControllers(...options.controllers);

@@ -63,8 +63,9 @@ export class EmailService {
     // Simulate external email service call
     // In real app, this would call SendGrid, AWS SES, etc.
 
-    // Simulate random failures for demonstration
-    if (Math.random() < 0.1) {
+    // Simulate failures for specific test cases
+    // Use deterministic patterns instead of random for reliable testing
+    if (to.includes("batch-2")) {
       throw new Error("SMTP connection failed");
     }
 

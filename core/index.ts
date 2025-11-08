@@ -74,6 +74,19 @@ export { schemaRegistry } from "./schema-registry";
 // Application Factory
 export * from "./factory";
 
+// CORS Module
+export type { CorsOptions } from "./cors";
+export { setupCors, validateCorsOptions } from "./cors";
+
+// Global Prefix Module
+export type { GlobalPrefixOptions } from "./global-prefix";
+export {
+  applyGlobalPrefix,
+  normalizePrefixPath,
+  validateGlobalPrefix,
+  wrapWithPrefix,
+} from "./global-prefix";
+
 // Testing Module
 export * from "./testing";
 

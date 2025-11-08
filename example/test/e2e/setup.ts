@@ -3,6 +3,12 @@
  * Provides utilities for starting/stopping the WynkJS app for E2E testing
  */
 
+import { config } from "dotenv";
+import { join } from "path";
+
+// Load environment variables from example/.env
+config({ path: join(__dirname, "../../.env") });
+
 import { WynkFactory, DetailedErrorFormatter } from "wynkjs";
 import { UserController } from "../../src/modules/user/user.controller";
 import { EmailService } from "../../src/modules/email/email.service";
@@ -55,20 +61,23 @@ export async function startTestApp(
   // Register filters
   app.useGlobalFilters(new CustomExceptionFilter());
 
-  // Build and get the Elysia instance
+  // Build and get the WynkJS instance
   await (app as any).build();
-  const elysiaApp = (app as any).getApp();
+  const wynkApp = (app as any).getApp();
 
   // Start server and store the server instance
-  currentServer = elysiaApp.listen(port);
+  currentServer = wynkApp.listen(port);
   currentApp = app;
 
-  // Wait for server to be ready
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  // Wait for server to be ready - increased timeout for reliability
+  await new Promise((resolve) => setTimeout(resolve, 200));
+
+  // Verify server is listening
+  console.log(`✅ Test server started on port ${port}`);
 
   return {
     baseUrl: `http://localhost:${port}`,
-    app: elysiaApp,
+    app: wynkApp,
     stop: async () => {
       if (currentServer) {
         currentServer.stop();

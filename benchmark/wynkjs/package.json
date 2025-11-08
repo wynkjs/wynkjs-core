@@ -1,0 +1,23 @@
+{
+  "name": "wynkjs-benchmark",
+  "version": "1.0.0",
+  "description": "WynkJS performance benchmark",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir=dist --target=bun",
+    "benchmark": "autocannon -c 100 -d 30 -p 10 http://localhost:3000"
+  },
+  "dependencies": {
+    "wynkjs": "file:../../",
+    "drizzle-orm": "latest",
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/pg": "^8.10.9",
+    "typescript": "^5.0.0"
+  }
+}

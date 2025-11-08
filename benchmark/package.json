@@ -1,0 +1,19 @@
+{
+  "name": "benchmark",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Performance comparison between WynkJS, Express.js, and NestJS using real-world scenarios with PostgreSQL + Drizzle ORM.",
+  "main": "seed-database.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "all": "bash run-all.sh"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "pg": "^8.16.3"
+  }
+}

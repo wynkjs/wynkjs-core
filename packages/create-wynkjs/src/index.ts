@@ -368,15 +368,26 @@ function createSourceFiles(targetDir: string) {
   const userDtoContent = `import { DTO, CommonDTO } from "wynkjs";
 
 export const CreateUserDTO = DTO.Strict({
-  name: DTO.String({ minLength: 2, maxLength: 50 }),
-  email: CommonDTO.Email(),
-  age: DTO.Optional(DTO.Number({ minimum: 18 })),
+  name: DTO.String({
+    minLength: 2,
+    maxLength: 50,
+    error: "Name must be between 2 and 50 characters",
+  }),
+  email: CommonDTO.Email({
+    error: "Please provide a valid email address",
+  }),
+  age: DTO.Optional(
+    DTO.Number({
+      minimum: 18,
+      error: "Age must be at least 18 years",
+    })
+  ),
 });
 
 export interface CreateUserType {
   name: string;
   email: string;
-  age: number;
+  age?: number;
 }
 
 export const UserIdDto = DTO.Object({

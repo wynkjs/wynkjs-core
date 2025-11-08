@@ -1,0 +1,19 @@
+{
+  "name": "expressjs-benchmark",
+  "version": "1.0.0",
+  "description": "Express.js performance benchmark",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "benchmark": "autocannon -c 100 -d 30 -p 10 http://localhost:3001"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "drizzle-orm": "latest",
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1",
+    "zod": "^3.22.4",
+    "bcrypt": "^5.1.1"
+  }
+}

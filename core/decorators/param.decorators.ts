@@ -1,7 +1,7 @@
 import "reflect-metadata";
 
 /**
- * Parameter Decorators for ElysiaJS Framework
+ * Parameter Decorators for WynkJS Framework
  * Extract data from request context
  */
 
@@ -139,7 +139,7 @@ export function Res(): ParameterDecorator {
 export const Response = Res;
 
 /**
- * @Context decorator - Injects full Elysia context
+ * @Context decorator - Injects full WynkJS context
  * @example
  * @Get()
  * getData(@Context() ctx: any) {}

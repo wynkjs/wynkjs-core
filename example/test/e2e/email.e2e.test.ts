@@ -20,7 +20,8 @@ describe("Email Integration E2E", () => {
 
   beforeAll(async () => {
     app = await startTestApp(testPort);
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Increased wait time to ensure server is fully ready
+    await new Promise((resolve) => setTimeout(resolve, 300));
   });
 
   afterAll(async () => {
