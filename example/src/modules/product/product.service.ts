@@ -30,9 +30,12 @@ export class ProductService {
     return item;
   }
 
-  update(id: string, data: Partial<Omit<Product, "id" | "createdAt" | "updatedAt">>): Product | undefined {
+  update(
+    id: string,
+    data: Partial<Omit<Product, "id" | "createdAt" | "updatedAt">>
+  ): Product | undefined {
     const index = this.items.findIndex((item) => item.id === id);
-    
+
     if (index === -1) {
       return undefined;
     }
@@ -48,7 +51,7 @@ export class ProductService {
 
   delete(id: string): boolean {
     const index = this.items.findIndex((item) => item.id === id);
-    
+
     if (index === -1) {
       return false;
     }

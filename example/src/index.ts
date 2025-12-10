@@ -5,6 +5,7 @@ import {
   DetailedErrorFormatter,
   WynkFactory,
   CorsOptions,
+  compression,
 } from "wynkjs";
 
 import { GlobalExceptionFilter, DatabaseExceptionFilter } from "wynkjs";
@@ -58,6 +59,14 @@ async function bootstrap() {
     logger: true,
     validationErrorFormatter: new DetailedErrorFormatter(),
   });
+
+  // Enable compression middleware
+  app.use(
+    compression({
+      threshold: 1024, // Compress responses larger than 1KB
+      encodings: ["br", "gzip", "deflate"], // Support Brotli, Gzip, and Deflate
+    })
+  );
 
   // Option 2: With FormatErrorFormatter (object-based format)
   // const app = WynkFactory.create({

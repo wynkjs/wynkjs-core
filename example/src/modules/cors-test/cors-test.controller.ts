@@ -59,4 +59,28 @@ export class CorsTestController {
       ],
     };
   }
+
+  @Get("/large")
+  getLargeData() {
+    // Generate large data to test compression (> 1KB threshold)
+    const items = Array.from({ length: 100 }, (_, i) => ({
+      id: i + 1,
+      name: `Item ${i + 1}`,
+      description: `This is a detailed description for item ${
+        i + 1
+      }. It contains multiple sentences to increase the payload size. Compression should significantly reduce the size of this response.`,
+      timestamp: new Date().toISOString(),
+      metadata: {
+        category: `Category ${(i % 10) + 1}`,
+        tags: [`tag${i}`, `tag${i + 1}`, `tag${i + 2}`],
+        active: i % 2 === 0,
+      },
+    }));
+
+    return {
+      message: "Large dataset for compression testing",
+      totalItems: items.length,
+      items,
+    };
+  }
 }
