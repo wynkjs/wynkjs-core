@@ -29,19 +29,24 @@ extract_metric() {
     
     case $metric in
         "req_sec")
-            grep "Req/Sec" "$file" | awk '{print $2}' | head -n 1
+            # Extract Avg from Req/Sec row (field 7 when split by │)
+            grep "│ Req/Sec" "$file" | awk -F'│' '{print $7}' | tr -d ' ,'
             ;;
         "latency_avg")
-            grep "Latency" "$file" | awk '{print $2}' | head -n 1
+            # Extract Avg from Latency row (field 7 when split by │)
+            grep "│ Latency" "$file" | head -n 1 | awk -F'│' '{print $7}' | tr -d ' '
             ;;
         "latency_max")
-            grep "Latency" "$file" | awk '{print $6}' | head -n 1
+            # Extract Max from Latency row (field 9 when split by │)
+            grep "│ Latency" "$file" | head -n 1 | awk -F'│' '{print $9}' | tr -d ' '
             ;;
         "total_req")
-            grep "requests in" "$file" | awk '{print $1}'
+            # Extract total requests from summary line (e.g., "399k requests")
+            grep "requests in" "$file" | awk '{gsub(/k/, "000"); gsub(/m/, "000000"); print $1}'
             ;;
         "total_bytes")
-            grep "requests in" "$file" | awk '{print $5}'
+            # Extract total bytes from summary line
+            grep "requests in" "$file" | awk '{print $5 " " $6}'
             ;;
     esac
 }
@@ -67,6 +72,7 @@ cat > "$OUTPUT_FILE" << 'EOF'
 - **WynkJS:** Bun runtime
 - **Express.js:** Node.js runtime
 - **NestJS:** Node.js + Fastify adapter
+- **Raw Elysia.js:** Bun runtime (minimal framework overhead)
 
 ---
 
@@ -80,6 +86,7 @@ EOF
 echo "| WynkJS | $(extract_metric "$RESULT_DIR/wynkjs-health.txt" "req_sec") | $(extract_metric "$RESULT_DIR/wynkjs-health.txt" "latency_avg") | $(extract_metric "$RESULT_DIR/wynkjs-health.txt" "latency_max") | $(extract_metric "$RESULT_DIR/wynkjs-health.txt" "total_req") |" >> "$OUTPUT_FILE"
 echo "| Express.js | $(extract_metric "$RESULT_DIR/expressjs-health.txt" "req_sec") | $(extract_metric "$RESULT_DIR/expressjs-health.txt" "latency_avg") | $(extract_metric "$RESULT_DIR/expressjs-health.txt" "latency_max") | $(extract_metric "$RESULT_DIR/expressjs-health.txt" "total_req") |" >> "$OUTPUT_FILE"
 echo "| NestJS | $(extract_metric "$RESULT_DIR/nestjs-health.txt" "req_sec") | $(extract_metric "$RESULT_DIR/nestjs-health.txt" "latency_avg") | $(extract_metric "$RESULT_DIR/nestjs-health.txt" "latency_max") | $(extract_metric "$RESULT_DIR/nestjs-health.txt" "total_req") |" >> "$OUTPUT_FILE"
+echo "| Raw Elysia.js | $(extract_metric "$RESULT_DIR/raw-elysia-health.txt" "req_sec") | $(extract_metric "$RESULT_DIR/raw-elysia-health.txt" "latency_avg") | $(extract_metric "$RESULT_DIR/raw-elysia-health.txt" "latency_max") | $(extract_metric "$RESULT_DIR/raw-elysia-health.txt" "total_req") |" >> "$OUTPUT_FILE"
 
 cat >> "$OUTPUT_FILE" << 'EOF'
 
@@ -95,6 +102,7 @@ EOF
 echo "| WynkJS | $(extract_metric "$RESULT_DIR/wynkjs-users-read.txt" "req_sec") | $(extract_metric "$RESULT_DIR/wynkjs-users-read.txt" "latency_avg") | $(extract_metric "$RESULT_DIR/wynkjs-users-read.txt" "latency_max") | $(extract_metric "$RESULT_DIR/wynkjs-users-read.txt" "total_req") |" >> "$OUTPUT_FILE"
 echo "| Express.js | $(extract_metric "$RESULT_DIR/expressjs-users-read.txt" "req_sec") | $(extract_metric "$RESULT_DIR/expressjs-users-read.txt" "latency_avg") | $(extract_metric "$RESULT_DIR/expressjs-users-read.txt" "latency_max") | $(extract_metric "$RESULT_DIR/expressjs-users-read.txt" "total_req") |" >> "$OUTPUT_FILE"
 echo "| NestJS | $(extract_metric "$RESULT_DIR/nestjs-users-read.txt" "req_sec") | $(extract_metric "$RESULT_DIR/nestjs-users-read.txt" "latency_avg") | $(extract_metric "$RESULT_DIR/nestjs-users-read.txt" "latency_max") | $(extract_metric "$RESULT_DIR/nestjs-users-read.txt" "total_req") |" >> "$OUTPUT_FILE"
+echo "| Raw Elysia.js | $(extract_metric "$RESULT_DIR/raw-elysia-users-read.txt" "req_sec") | $(extract_metric "$RESULT_DIR/raw-elysia-users-read.txt" "latency_avg") | $(extract_metric "$RESULT_DIR/raw-elysia-users-read.txt" "latency_max") | $(extract_metric "$RESULT_DIR/raw-elysia-users-read.txt" "total_req") |" >> "$OUTPUT_FILE"
 
 cat >> "$OUTPUT_FILE" << 'EOF'
 
@@ -110,6 +118,7 @@ EOF
 echo "| WynkJS | $(extract_metric "$RESULT_DIR/wynkjs-users-write.txt" "req_sec") | $(extract_metric "$RESULT_DIR/wynkjs-users-write.txt" "latency_avg") | $(extract_metric "$RESULT_DIR/wynkjs-users-write.txt" "latency_max") | $(extract_metric "$RESULT_DIR/wynkjs-users-write.txt" "total_req") |" >> "$OUTPUT_FILE"
 echo "| Express.js | $(extract_metric "$RESULT_DIR/expressjs-users-write.txt" "req_sec") | $(extract_metric "$RESULT_DIR/expressjs-users-write.txt" "latency_avg") | $(extract_metric "$RESULT_DIR/expressjs-users-write.txt" "latency_max") | $(extract_metric "$RESULT_DIR/expressjs-users-write.txt" "total_req") |" >> "$OUTPUT_FILE"
 echo "| NestJS | $(extract_metric "$RESULT_DIR/nestjs-users-write.txt" "req_sec") | $(extract_metric "$RESULT_DIR/nestjs-users-write.txt" "latency_avg") | $(extract_metric "$RESULT_DIR/nestjs-users-write.txt" "latency_max") | $(extract_metric "$RESULT_DIR/nestjs-users-write.txt" "total_req") |" >> "$OUTPUT_FILE"
+echo "| Raw Elysia.js | $(extract_metric "$RESULT_DIR/raw-elysia-users-write.txt" "req_sec") | $(extract_metric "$RESULT_DIR/raw-elysia-users-write.txt" "latency_avg") | $(extract_metric "$RESULT_DIR/raw-elysia-users-write.txt" "latency_max") | $(extract_metric "$RESULT_DIR/raw-elysia-users-write.txt" "total_req") |" >> "$OUTPUT_FILE"
 
 cat >> "$OUTPUT_FILE" << 'EOF'
 
@@ -117,25 +126,195 @@ cat >> "$OUTPUT_FILE" << 'EOF'
 
 ## Performance Summary
 
+EOF
+
+# Extract metrics for calculations
+WYNK_HEALTH=$(extract_metric "$RESULT_DIR/wynkjs-health.txt" "req_sec")
+EXPRESS_HEALTH=$(extract_metric "$RESULT_DIR/expressjs-health.txt" "req_sec")
+NEST_HEALTH=$(extract_metric "$RESULT_DIR/nestjs-health.txt" "req_sec")
+ELYSIA_HEALTH=$(extract_metric "$RESULT_DIR/raw-elysia-health.txt" "req_sec")
+
+WYNK_READ=$(extract_metric "$RESULT_DIR/wynkjs-users-read.txt" "req_sec")
+EXPRESS_READ=$(extract_metric "$RESULT_DIR/expressjs-users-read.txt" "req_sec")
+NEST_READ=$(extract_metric "$RESULT_DIR/nestjs-users-read.txt" "req_sec")
+ELYSIA_READ=$(extract_metric "$RESULT_DIR/raw-elysia-users-read.txt" "req_sec")
+
+WYNK_WRITE=$(extract_metric "$RESULT_DIR/wynkjs-users-write.txt" "req_sec")
+EXPRESS_WRITE=$(extract_metric "$RESULT_DIR/expressjs-users-write.txt" "req_sec")
+NEST_WRITE=$(extract_metric "$RESULT_DIR/nestjs-users-write.txt" "req_sec")
+ELYSIA_WRITE=$(extract_metric "$RESULT_DIR/raw-elysia-users-write.txt" "req_sec")
+
+# Function to calculate speed ratio
+calc_ratio() {
+    local val1=$1
+    local val2=$2
+    
+    if [ "$val1" = "N/A" ] || [ "$val2" = "N/A" ] || [ -z "$val1" ] || [ -z "$val2" ]; then
+        echo "N/A"
+        return
+    fi
+    
+    # Use bc for floating point calculation
+    echo "scale=2; $val1 / $val2" | bc
+}
+
+# Calculate ratios for health check
+if [ "$WYNK_HEALTH" != "N/A" ] && [ "$EXPRESS_HEALTH" != "N/A" ]; then
+    WYNK_VS_EXPRESS_HEALTH=$(calc_ratio "$WYNK_HEALTH" "$EXPRESS_HEALTH")
+    EXPRESS_VS_WYNK_HEALTH=$(calc_ratio "$EXPRESS_HEALTH" "$WYNK_HEALTH")
+else
+    WYNK_VS_EXPRESS_HEALTH="N/A"
+    EXPRESS_VS_WYNK_HEALTH="N/A"
+fi
+
+if [ "$WYNK_HEALTH" != "N/A" ] && [ "$NEST_HEALTH" != "N/A" ]; then
+    WYNK_VS_NEST_HEALTH=$(calc_ratio "$WYNK_HEALTH" "$NEST_HEALTH")
+    NEST_VS_WYNK_HEALTH=$(calc_ratio "$NEST_HEALTH" "$WYNK_HEALTH")
+else
+    WYNK_VS_NEST_HEALTH="N/A"
+    NEST_VS_WYNK_HEALTH="N/A"
+fi
+
+# Calculate ratios for database read
+if [ "$WYNK_READ" != "N/A" ] && [ "$EXPRESS_READ" != "N/A" ]; then
+    WYNK_VS_EXPRESS_READ=$(calc_ratio "$WYNK_READ" "$EXPRESS_READ")
+    EXPRESS_VS_WYNK_READ=$(calc_ratio "$EXPRESS_READ" "$WYNK_READ")
+else
+    WYNK_VS_EXPRESS_READ="N/A"
+    EXPRESS_VS_WYNK_READ="N/A"
+fi
+
+if [ "$WYNK_READ" != "N/A" ] && [ "$NEST_READ" != "N/A" ]; then
+    WYNK_VS_NEST_READ=$(calc_ratio "$WYNK_READ" "$NEST_READ")
+    NEST_VS_WYNK_READ=$(calc_ratio "$NEST_READ" "$WYNK_READ")
+else
+    WYNK_VS_NEST_READ="N/A"
+    NEST_VS_WYNK_READ="N/A"
+fi
+
+# Generate comparison section
+cat >> "$OUTPUT_FILE" << EOF
 ### Speed Comparison (Requests/Second)
 
 **Health Check:**
-- WynkJS is **X.Xx faster** than Express.js
-- WynkJS is **X.Xx faster** than NestJS
+EOF
+
+if [ "$WYNK_VS_EXPRESS_HEALTH" != "N/A" ]; then
+    # Check which is faster
+    FASTER=$(echo "$WYNK_VS_EXPRESS_HEALTH > 1" | bc)
+    if [ "$FASTER" -eq 1 ]; then
+        echo "- WynkJS is **${WYNK_VS_EXPRESS_HEALTH}x faster** than Express.js ($WYNK_HEALTH vs $EXPRESS_HEALTH req/s)" >> "$OUTPUT_FILE"
+    else
+        echo "- Express.js is **${EXPRESS_VS_WYNK_HEALTH}x faster** than WynkJS ($EXPRESS_HEALTH vs $WYNK_HEALTH req/s)" >> "$OUTPUT_FILE"
+    fi
+else
+    echo "- No data available for WynkJS vs Express.js comparison" >> "$OUTPUT_FILE"
+fi
+
+if [ "$WYNK_VS_NEST_HEALTH" != "N/A" ]; then
+    FASTER=$(echo "$WYNK_VS_NEST_HEALTH > 1" | bc)
+    if [ "$FASTER" -eq 1 ]; then
+        echo "- WynkJS is **${WYNK_VS_NEST_HEALTH}x faster** than NestJS ($WYNK_HEALTH vs $NEST_HEALTH req/s)" >> "$OUTPUT_FILE"
+    else
+        echo "- NestJS is **${NEST_VS_WYNK_HEALTH}x faster** than WynkJS ($NEST_HEALTH vs $WYNK_HEALTH req/s)" >> "$OUTPUT_FILE"
+    fi
+else
+    echo "- No data available for WynkJS vs NestJS comparison" >> "$OUTPUT_FILE"
+fi
+
+if [ "$ELYSIA_HEALTH" != "N/A" ] && [ ! -z "$ELYSIA_HEALTH" ]; then
+    if [ "$WYNK_HEALTH" != "N/A" ] && [ ! -z "$WYNK_HEALTH" ]; then
+        WYNK_VS_ELYSIA_HEALTH=$(calc_ratio "$WYNK_HEALTH" "$ELYSIA_HEALTH")
+        ELYSIA_VS_WYNK_HEALTH=$(calc_ratio "$ELYSIA_HEALTH" "$WYNK_HEALTH")
+        
+        FASTER=$(echo "$WYNK_VS_ELYSIA_HEALTH > 1" | bc)
+        if [ "$FASTER" -eq 1 ]; then
+            echo "- WynkJS is **${WYNK_VS_ELYSIA_HEALTH}x faster** than Raw Elysia.js ($WYNK_HEALTH vs $ELYSIA_HEALTH req/s)" >> "$OUTPUT_FILE"
+        else
+            echo "- Raw Elysia.js is **${ELYSIA_VS_WYNK_HEALTH}x faster** than WynkJS ($ELYSIA_HEALTH vs $WYNK_HEALTH req/s)" >> "$OUTPUT_FILE"
+        fi
+    fi
+fi
+
+cat >> "$OUTPUT_FILE" << EOF
 
 **Database Read:**
-- WynkJS is **X.Xx faster** than Express.js
-- WynkJS is **X.Xx faster** than NestJS
+EOF
+
+if [ "$WYNK_VS_EXPRESS_READ" != "N/A" ]; then
+    FASTER=$(echo "$WYNK_VS_EXPRESS_READ > 1" | bc)
+    if [ "$FASTER" -eq 1 ]; then
+        echo "- WynkJS is **${WYNK_VS_EXPRESS_READ}x faster** than Express.js ($WYNK_READ vs $EXPRESS_READ req/s)" >> "$OUTPUT_FILE"
+    else
+        echo "- Express.js is **${EXPRESS_VS_WYNK_READ}x faster** than WynkJS ($EXPRESS_READ vs $WYNK_READ req/s)" >> "$OUTPUT_FILE"
+    fi
+else
+    echo "- No data available for WynkJS vs Express.js comparison" >> "$OUTPUT_FILE"
+fi
+
+if [ "$WYNK_VS_NEST_READ" != "N/A" ]; then
+    FASTER=$(echo "$WYNK_VS_NEST_READ > 1" | bc)
+    if [ "$FASTER" -eq 1 ]; then
+        echo "- WynkJS is **${WYNK_VS_NEST_READ}x faster** than NestJS ($WYNK_READ vs $NEST_READ req/s)" >> "$OUTPUT_FILE"
+    else
+        echo "- NestJS is **${NEST_VS_WYNK_READ}x faster** than WynkJS ($NEST_READ vs $WYNK_READ req/s)" >> "$OUTPUT_FILE"
+    fi
+else
+    echo "- No data available for WynkJS vs NestJS comparison" >> "$OUTPUT_FILE"
+fi
+
+if [ "$ELYSIA_READ" != "N/A" ] && [ ! -z "$ELYSIA_READ" ]; then
+    if [ "$WYNK_READ" != "N/A" ] && [ ! -z "$WYNK_READ" ]; then
+        WYNK_VS_ELYSIA_READ=$(calc_ratio "$WYNK_READ" "$ELYSIA_READ")
+        ELYSIA_VS_WYNK_READ=$(calc_ratio "$ELYSIA_READ" "$WYNK_READ")
+        
+        FASTER=$(echo "$WYNK_VS_ELYSIA_READ > 1" | bc)
+        if [ "$FASTER" -eq 1 ]; then
+            echo "- WynkJS is **${WYNK_VS_ELYSIA_READ}x faster** than Raw Elysia.js ($WYNK_READ vs $ELYSIA_READ req/s)" >> "$OUTPUT_FILE"
+        else
+            echo "- Raw Elysia.js is **${ELYSIA_VS_WYNK_READ}x faster** than WynkJS ($ELYSIA_READ vs $WYNK_READ req/s)" >> "$OUTPUT_FILE"
+        fi
+    fi
+fi
+
+cat >> "$OUTPUT_FILE" << EOF
 
 **Database Write:**
-- WynkJS is **X.Xx faster** than Express.js
-- WynkJS is **X.Xx faster** than NestJS
+EOF
+
+if [ "$WYNK_WRITE" != "N/A" ] && [ "$EXPRESS_WRITE" != "N/A" ]; then
+    WYNK_VS_EXPRESS_WRITE=$(calc_ratio "$WYNK_WRITE" "$EXPRESS_WRITE")
+    EXPRESS_VS_WYNK_WRITE=$(calc_ratio "$EXPRESS_WRITE" "$WYNK_WRITE")
+    
+    FASTER=$(echo "$WYNK_VS_EXPRESS_WRITE > 1" | bc)
+    if [ "$FASTER" -eq 1 ]; then
+        echo "- WynkJS is **${WYNK_VS_EXPRESS_WRITE}x faster** than Express.js ($WYNK_WRITE vs $EXPRESS_WRITE req/s)" >> "$OUTPUT_FILE"
+    else
+        echo "- Express.js is **${EXPRESS_VS_WYNK_WRITE}x faster** than WynkJS ($EXPRESS_WRITE vs $WYNK_WRITE req/s)" >> "$OUTPUT_FILE"
+    fi
+else
+    echo "- No data available (tests not implemented yet)" >> "$OUTPUT_FILE"
+fi
+
+if [ "$WYNK_WRITE" != "N/A" ] && [ "$NEST_WRITE" != "N/A" ]; then
+    WYNK_VS_NEST_WRITE=$(calc_ratio "$WYNK_WRITE" "$NEST_WRITE")
+    NEST_VS_WYNK_WRITE=$(calc_ratio "$NEST_WRITE" "$WYNK_WRITE")
+    
+    FASTER=$(echo "$WYNK_VS_NEST_WRITE > 1" | bc)
+    if [ "$FASTER" -eq 1 ]; then
+        echo "- WynkJS is **${WYNK_VS_NEST_WRITE}x faster** than NestJS ($WYNK_WRITE vs $NEST_WRITE req/s)" >> "$OUTPUT_FILE"
+    else
+        echo "- NestJS is **${NEST_VS_WYNK_WRITE}x faster** than WynkJS ($NEST_WRITE vs $WYNK_WRITE req/s)" >> "$OUTPUT_FILE"
+    fi
+fi
+
+cat >> "$OUTPUT_FILE" << 'EOF'
 
 ### Key Findings
 
-- **Simple Response:** WynkJS leverages Bun's optimized runtime for superior performance
-- **Database Operations:** WynkJS maintains performance advantage even with database overhead
-- **Validation + Write:** WynkJS's DTO system is competitive with Express Zod and NestJS class-validator
+- **Simple Response:** Performance varies across frameworks for simple health check endpoints
+- **Database Operations:** Performance normalized when actual I/O operations are involved
+- **Validation + Write:** Database write benchmarks provide insight into real-world CRUD performance
 
 ### Methodology
 
@@ -153,6 +332,7 @@ Detailed autocannon output available in:
 - `result/wynkjs-*.txt`
 - `result/expressjs-*.txt`
 - `result/nestjs-*.txt`
+- `result/raw-elysia-*.txt`
 
 ---
 

@@ -433,6 +433,43 @@ export class WynkFramework {
   }
 
   /**
+   * Use an Elysia plugin or middleware (fully compatible with Elysia.js ecosystem)
+   *
+   * This method directly proxies to Elysia's use() method, making all Elysia plugins
+   * and middleware work seamlessly with WynkJS.
+   *
+   * @param plugin - Any Elysia plugin or instance
+   * @returns this for method chaining
+   *
+   * @example
+   * ```typescript
+   * import { WynkFactory } from "wynkjs";
+   * import { compression } from "wynkjs";
+   * import { cors } from "@elysiajs/cors";
+   * import { swagger } from "@elysiajs/swagger";
+   * import { jwt } from "@elysiajs/jwt";
+   *
+   * const app = WynkFactory.create({
+   *   controllers: [UserController],
+   * });
+   *
+   * // Use WynkJS built-in plugins
+   * app.use(compression({ threshold: 1024 }));
+   *
+   * // Use any Elysia plugin from npm
+   * app.use(cors());
+   * app.use(swagger());
+   * app.use(jwt({ name: 'jwt', secret: 'secret' }));
+   *
+   * await app.listen(3000);
+   * ```
+   */
+  use(...plugins: any[]): this {
+    (this.app.use as any)(...plugins);
+    return this;
+  }
+
+  /**
    * Start listening on a port
    */
   async listen(port: number): Promise<void> {

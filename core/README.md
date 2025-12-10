@@ -12,6 +12,7 @@
 - **Pipes** - Input validation and transformation
 - **Interceptors** - Request/response modification
 - **Filters** - Error handling
+- **Plugins** - Compression plugin and extensible plugin system via app.use()
 - **DTO Validation** - Using Elysia's built-in TypeBox
 - **Database Helpers** - initializeDatabase() and getDatabase() (optional)
 

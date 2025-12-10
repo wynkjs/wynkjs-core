@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2025-11-28
+
+### Added
+
+- 🔌 **Compression Plugin** - Built-in HTTP compression middleware with Brotli, Gzip, and Deflate support
+  - Smart compression (only compresses if it reduces size)
+  - Configurable threshold (default: 1024 bytes)
+  - Auto-detects client support via `Accept-Encoding` header
+  - Up to 95% size reduction with Brotli compression (58KB → 2.9KB)
+  - Up to 87% size reduction with Gzip compression (58KB → 7.7KB)
+  - No external dependencies (uses Node.js built-in zlib module)
+  - Usage: `app.use(compression({ threshold: 1024, encodings: ["br", "gzip", "deflate"] }))`
+- ⚡ **Plugin System** - Added `use()` method to WynkFramework for extensibility
+  - Compatible with Elysia plugins and custom middleware
+  - Method chaining support for clean API: `app.use(plugin1).use(plugin2)`
+  - Support for both Elysia plugins and function-based middleware
+- 📚 **Plugin Documentation** - Comprehensive guides for using and creating plugins
+  - Complete compression plugin documentation with examples
+  - Custom plugin creation patterns using Elysia hooks
+  - Best practices and performance tips
+  - Plugin ideas for future development (rate limiting, caching, JWT, etc.)
+
+### Examples
+
+```typescript
+import { WynkFactory, compression } from "wynkjs";
+
+const app = WynkFactory.create({
+  controllers: [UserController],
+});
+
+// Add compression plugin
+app.use(
+  compression({
+    threshold: 1024,
+    encodings: ["br", "gzip", "deflate"],
+  })
+);
+
+await app.listen(3000);
+```
+
+### Documentation
+
+- Added `core/plugins/README.md` with full plugin system documentation
+- Updated main README.md with plugins section and compression examples
+- Added compression plugin to exports in `core/index.ts`
+
 ## [1.0.5] - 2025-11-09
 
 ### Added

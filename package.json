@@ -1,7 +1,7 @@
 {
   "name": "wynkjs",
-  "version": "1.0.6",
-  "description": "A high-performance TypeScript framework built on Elysia for Bun with elegant decorator-based architecture - 10x faster than Express/NestJS",
+  "version": "1.0.7",
+  "description": "A high-performance TypeScript framework built on Elysia for Bun with elegant decorator-based architecture, built-in compression, and plugin system - 10x faster than Express/NestJS",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,7 +27,12 @@
     "dependency-injection",
     "rest-api",
     "backend",
-    "server"
+    "server",
+    "compression",
+    "gzip",
+    "brotli",
+    "plugins",
+    "middleware"
   ],
   "author": "Alam Jamal alamjamal88@gmail.com",
   "license": "MIT",

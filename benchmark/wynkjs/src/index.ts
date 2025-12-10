@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { WynkFactory } from "wynkjs";
+import { WynkFactory, compression } from "wynkjs";
 import { DatabaseService } from "./database.service";
 import { UserController } from "./user.controller";
 import { HealthController } from "./health.controller";
@@ -14,6 +14,14 @@ const app = WynkFactory.create({
   cors: true,
   logger: false, // Disable logging for benchmark
 });
+
+// Add compression plugin (like NestJS/Elysia style)
+app.use(
+  compression({
+    threshold: 1024, // Compress responses larger than 1KB
+    encodings: ["gzip", "br", "deflate"], // Prefer gzip, then brotli, then deflate
+  })
+);
 
 console.log("⏳ Starting server and initializing providers...");
 

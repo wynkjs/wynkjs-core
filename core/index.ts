@@ -87,6 +87,10 @@ export {
   wrapWithPrefix,
 } from "./global-prefix";
 
+// Plugins
+export { compression } from "./plugins/compression";
+export type { CompressionOptions } from "./plugins/compression";
+
 // Testing Module
 export * from "./testing";
 

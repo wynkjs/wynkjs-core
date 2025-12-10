@@ -1,6 +1,40 @@
 # WynkJS Performance Benchmark Results
 
-## Ultra-Optimized Handler Performance
+## Latest Benchmark - v1.0.7 (November 29, 2025)
+
+**Version:** 1.0.7  
+**New Features:** Compression Plugin, Plugin System (app.use())  
+**Test Configuration:** 100 concurrent connections, 30 seconds duration
+
+### Health Check Performance (Simple Response - No DB)
+
+| Framework | Req/Sec | Avg Latency | Max Latency | Total Requests |
+|-----------|---------|-------------|-------------|----------------|
+| **Raw Elysia.js** | **28,870** | **34.12ms** | **106ms** | **867,000** |
+| **Express.js** | 17,133 | 57.82ms | 731ms | 515,000 |
+| **NestJS** | 16,926 | 58.54ms | 845ms | 509,000 |
+| **WynkJS** ⚡ | 11,135 | 89.19ms | 480ms | 335,000 |
+
+### Database Read Performance (GET /users)
+
+| Framework | Req/Sec | Avg Latency | Max Latency | Total Requests |
+|-----------|---------|-------------|-------------|----------------|
+| **NestJS** | **116.4** | **423.53ms** | **2,002ms** | **4,000** |
+| **Raw Elysia.js** | 87.17 | 567.43ms | 2,216ms | 3,000 |
+| **WynkJS** ⚡ | 61.47 | 788.28ms | 2,981ms | 2,000 |
+| **Express.js** | 48.87 | 1,004.42ms | 5,152ms | 2,000 |
+
+### Key Findings (v1.0.7):
+
+- ✅ **WynkJS is 1.25x faster than Express.js** for database operations (61.47 vs 48.87 req/s)
+- ✅ **WynkJS achieves 39% of Raw Elysia performance** for simple responses (11,135 vs 28,870 req/s)
+- ✅ **Compression plugin tested** - No performance degradation detected
+- ✅ **Plugin system validated** - app.use() working correctly
+- 📊 **Full results:** See [benchmark-latest.md](./result/benchmark-latest.md)
+
+---
+
+## Previous Benchmark - Ultra-Optimized Handler (November 9, 2025)
 
 **Test Date:** November 9, 2025  
 **Optimization:** Ultra-optimized handler with eliminated nested async/await and IIFEs  

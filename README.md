@@ -19,7 +19,7 @@ _10x faster than Express/NestJs, built for modern TypeScript development for Bun
 
 ## About
 
-WynkJS is a modern, TypeScript-first web framework alternative to NestJs that brings Elegant Decorator-Based Architecture to the blazing-fast Elysia runtime built for **Bun**. It features familiar concepts—**Controllers, Dependency Injection, Guards, Pipes, Interceptors, and Exception Filters**—designed for building high‑performance REST APIs and backends on **Bun**. WynkJS embraces ESM, ships first-class types, and keeps things simple so you can move fast without the bloat.
+WynkJS is a modern, TypeScript-first web framework alternative to NestJs that brings Elegant Decorator-Based Architecture to the blazing-fast Elysia runtime built for **Bun**. It features familiar concepts—**Controllers, Dependency Injection, Guards, Pipes, Interceptors, Plugins, and Exception Filters**—designed for building high‑performance REST APIs and backends on **Bun**. WynkJS embraces ESM, ships first-class types, and keeps things simple so you can move fast without the bloat.
 
 Keywords: Bun framework, Fast web server, TypeScript decorators, dependency injection (DI), guards, pipes, interceptors, exception filters, fast web framework, REST API, backend, modern TypeScript.
 
@@ -34,7 +34,8 @@ WynkJS combines the **speed of Elysia** with an **Elegant Decorator-Based Archit
 - 💉 **Dependency Injection** - Built-in DI (no need to import reflect-metadata!)
 - 🔒 **TypeScript First** - TypeScript is mandatory, not optional. Full type safety and IntelliSense support
 - 🎯 **Simple & Clean** - Easy to learn, powerful to use
-- 🔌 **Middleware Support** - Guards, interceptors, pipes, filters
+- 🔌 **Plugin System** - Compression, custom middleware via app.use()
+- 🛡️ **Middleware Support** - Guards, interceptors, pipes, filters
 - ⚡ **Bun Only** - Built exclusively for Bun runtime (not Node.js)
 - 📦 **Single Import** - Everything from `wynkjs` (Injectable, Controller, Get, etc.)
 
@@ -510,7 +511,69 @@ const corsOptions: CorsOptions = {
 
 See [CORS.md](./CORS.md) for complete documentation.
 
-### 🔒 Authentication with Guards
+### � Plugins & Middleware
+
+WynkJS provides a flexible plugin system to extend your application. Add compression, rate limiting, caching, and more using the `app.use()` API.
+
+#### Compression Plugin (Built-in)
+
+Automatically compress HTTP responses with Brotli, Gzip, or Deflate:
+
+```typescript
+import { WynkFactory, compression } from "wynkjs";
+
+const app = WynkFactory.create({
+  controllers: [UserController],
+});
+
+// Add compression middleware
+app.use(
+  compression({
+    threshold: 1024, // Compress responses > 1KB
+    encodings: ["br", "gzip", "deflate"], // Prefer brotli, then gzip
+  })
+);
+
+await app.listen(3000);
+```
+
+**Real-world performance:**
+
+- Brotli: 58KB → 2.9KB (95% reduction) ⚡
+- Gzip: 58KB → 7.7KB (87% reduction)
+
+**Features:**
+
+- Smart compression (only compresses if it reduces size)
+- Auto-detects client support
+- Configurable threshold and compression levels
+- No external dependencies
+
+See [Plugins README](./core/plugins/README.md) for full documentation and options.
+
+#### Custom Plugins
+
+Create your own plugins:
+
+```typescript
+export function myPlugin(options = {}) {
+  return (app: Elysia) => {
+    return app
+      .onBeforeHandle(async (context) => {
+        // Before request
+      })
+      .onAfterHandle(async (context) => {
+        // After request
+        return context.response;
+      });
+  };
+}
+
+// Use it
+app.use(myPlugin({ option: "value" }));
+```
+
+### �🔒 Authentication with Guards
 
 ```typescript
 import { Controller, Get, Use } from "wynkjs";

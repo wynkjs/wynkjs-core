@@ -16,6 +16,7 @@ bun test \
   tests/decorators/param.decorators.test.ts \
   tests/decorators/guard.decorators.simple.test.ts \
   tests/decorators/interceptor.decorators.simple.test.ts \
+  tests/decorators/interceptor.advanced.test.ts \
   tests/decorators/pipe.decorators.simple.test.ts \
   tests/decorators/exception-filters.simple.test.ts
 
@@ -26,12 +27,12 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 if [ $TEST_EXIT_CODE -eq 0 ]; then
   echo "✅ All core tests passed!"
-  echo "✨ Expected: 182 tests passing (139 original + 17 CORS + 26 Global Prefix)"
+  echo "✨ Expected: ~240 tests passing (182 core + ~58 advanced interceptors)"
   echo "🎯 No regressions detected"
 else
   echo "❌ Some tests failed!"
   echo "⚠️  Check output above for details"
-  echo "💡 Compare with baseline: 182 tests should pass"
+  echo "💡 Compare with baseline: ~240 tests should pass"
 fi
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
