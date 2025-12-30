@@ -68,6 +68,16 @@ export * from "./decorators/database.decorators";
 // DTO Utilities
 export * from "./dto";
 
+// Request and Response wrappers
+export { Request } from "./request";
+export { Response } from "./response";
+export type { WynkRequest } from "./request";
+export type { WynkResponse } from "./response";
+export type { CookieOptions } from "./response";
+// Also export as types for type annotations
+export type { Request as RequestType } from "./request";
+export type { Response as ResponseType } from "./response";
+
 // Schema Registry for custom error messages
 export { schemaRegistry } from "./schema-registry";
 

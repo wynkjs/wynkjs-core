@@ -1,6 +1,6 @@
 {
   "name": "example",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "src/index.js",
   "scripts": {
     "test": "bun test src/modules/",
@@ -8,7 +8,10 @@
     "test:e2e": "bun test test/e2e/",
     "test:all": "bun test src/modules/ && bun test test/e2e/",
     "dev": "bun  --watch src/index.ts",
+    "dev:swagger": "bun --watch src/index-with-swagger.ts",
+    "swagger": "bun swagger-demo.ts",
     "start": "bun src/index.ts",
+    "start:swagger": "bun src/index-with-swagger.ts",
     "build": "bun build src/index.ts --outdir=dist --target=bun",
     "build:run": "bun run dist/index.js"
   },

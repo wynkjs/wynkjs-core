@@ -16,6 +16,12 @@ import { ProductController } from "./modules/product/product.controller";
 import { CorsTestController } from "./modules/cors-test/cors-test.controller";
 import { DatabaseService } from "./database";
 import { corsOptions } from "./corsOptions";
+import { AuthController } from "./modules/auth/auth.controller";
+import { AuthService } from "./modules/auth/auth.service";
+import { AuthGuard } from "./modules/auth/auth.guard";
+import { RoleSeeder } from "./modules/auth/role-seeder.service";
+import { ProtectedRoutesController } from "./modules/protected/protected-routes.controller";
+import { SessionController } from "./modules/session/session.controller";
 // Import CORS examples
 import {
   corsDynamicValidation,
@@ -53,8 +59,18 @@ async function bootstrap() {
   const app = WynkFactory.create({
     providers: [
       DatabaseService, // ✅ Database provider - initialized before controllers
+      AuthService, // ✅ Auth service provider
+      AuthGuard, // ✅ Auth guard provider
+      RoleSeeder, // ✅ Role seeder provider
     ],
-    controllers: [UserController, ProductController, CorsTestController],
+    controllers: [
+      UserController,
+      ProductController,
+      CorsTestController,
+      AuthController, // ✅ Auth controller
+      ProtectedRoutesController, // ✅ Protected routes controller
+      SessionController, // ✅ Session controller - demonstrates Request/Response architecture
+    ],
     cors: selectedCors,
     logger: true,
     validationErrorFormatter: new DetailedErrorFormatter(),

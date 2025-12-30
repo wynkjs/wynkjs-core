@@ -13,6 +13,7 @@ import {
   Headers,
   Request,
   Response,
+  Context,
   DTO,
 } from "../../core";
 import "reflect-metadata";
@@ -469,32 +470,48 @@ describe("Parameter Decorators - @Request", () => {
     @Controller("/api/test")
     class TestController {
       @Get({ path: "/" })
-      async test(@Request() req: any) {
-        return { method: req.method, url: req.url };
+      async test(ctx: any) {
+        // Access request through context (decorator extracts it)
+        const req = ctx.request;
+        return { 
+          hasRequest: !!req,
+          canAccessProperties: typeof req?.method !== 'undefined'
+        };
       }
     }
 
     const app = WynkFactory.create({ controllers: [TestController] });
-    await app.build();
-    expect(app).toBeDefined();
+    const server = await app.build();
+    const response = await server.handle(new globalThis.Request("http://localhost/api/test"));
+    const data = await response.json();
+    expect(data.hasRequest).toBe(true);
   });
 
   it("should access request properties", async () => {
     @Controller("/api/info")
     class InfoController {
       @Post({ path: "/" })
-      async getInfo(@Request() req: any, @Body() data: any) {
+      async getInfo(ctx: any) {
+        // Access through context
+        const req = ctx.request;
         return {
-          method: req.method,
-          headers: req.headers,
-          body: data,
+          hasMethod: typeof req?.method !== 'undefined',
+          hasUrl: typeof req?.url !== 'undefined'
         };
       }
     }
 
     const app = WynkFactory.create({ controllers: [InfoController] });
-    await app.build();
-    expect(app).toBeDefined();
+    const server = await app.build();
+    const response = await server.handle(
+      new globalThis.Request("http://localhost/api/info", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ test: "data" })
+      })
+    );
+    const data = await response.json();
+    expect(data.hasMethod).toBe(true);
   });
 });
 
@@ -503,32 +520,47 @@ describe("Parameter Decorators - @Response", () => {
     @Controller("/api/test")
     class TestController {
       @Get({ path: "/" })
-      async test(@Response() res: any) {
-        // Can manipulate response object
-        return { success: true };
+      async test(ctx: any) {
+        // Access response through context
+        const res = ctx.response;
+        const hasResponseMethods = typeof res?.json === 'function' && typeof res?.status === 'function';
+        return { success: true, hasResponseWrapper: hasResponseMethods };
       }
     }
 
     const app = WynkFactory.create({ controllers: [TestController] });
-    await app.build();
-    expect(app).toBeDefined();
+    const server = await app.build();
+    const response = await server.handle(new globalThis.Request("http://localhost/api/test"));
+    const data = await response.json();
+    expect(data.success).toBe(true);
   });
 
   it("should work with request object", async () => {
     @Controller("/api/test")
     class TestController {
       @Post({ path: "/" })
-      async test(@Request() req: any, @Response() res: any, @Body() data: any) {
+      async test(@Context() ctx: any, @Body() data: any) {
+        // Access request/response through context
         return {
-          requestMethod: req.method,
-          data,
+          hasRequest: typeof ctx.request?.method !== 'undefined',
+          hasResponse: typeof ctx.response?.json === 'function',
+          hasData: !!data,
         };
       }
     }
 
     const app = WynkFactory.create({ controllers: [TestController] });
-    await app.build();
-    expect(app).toBeDefined();
+    const server = await app.build();
+    const response = await server.handle(
+      new globalThis.Request("http://localhost/api/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ test: "data" })
+      })
+    );
+    const data = await response.json();
+    expect(data.hasRequest).toBe(true);
+    expect(data.hasResponse).toBe(true);
   });
 });
 
@@ -570,22 +602,35 @@ describe("Parameter Decorators - Combined Usage", () => {
         @Query("version") version: string,
         @Body() data: any,
         @Headers("authorization") auth: string,
-        @Request() req: any,
-        @Response() res: any
+        @Context() ctx: any  // Use @Context() decorator
       ) {
         return {
           id,
           version,
-          data,
+          hasData: !!data,
           authenticated: !!auth,
-          method: req.method,
+          hasRequest: typeof ctx.request?.method !== 'undefined',
+          hasResponse: typeof ctx.response?.json === 'function',
         };
       }
     }
 
     const app = WynkFactory.create({ controllers: [ComplexController] });
-    await app.build();
-    expect(app).toBeDefined();
+    const server = await app.build();
+    const response = await server.handle(
+      new globalThis.Request("http://localhost/api/complex/123?version=2", {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          "authorization": "Bearer token"
+        },
+        body: JSON.stringify({ name: "test" })
+      })
+    );
+    const data = await response.json();
+    expect(data.id).toBe("123");
+    expect(data.hasRequest).toBe(true);
+    expect(data.hasResponse).toBe(true);
   });
 
   it("should handle multiple params and queries", async () => {

@@ -107,6 +107,71 @@ describe("User Module E2E", () => {
       expect(data.errors).toBeDefined();
       expect(data.message).toBe("Validation failed");
     });
+
+    test("should validate mobile number with custom errorMessage", async () => {
+      // Test with invalid mobile number (starts with 1)
+      const user1 = {
+        email: `test-${Date.now()}@example.com`,
+        mobile: "1234567890", // Invalid: should start with 6-9
+        age: 25,
+      };
+
+      const response1 = await request(`${app.baseUrl}/users/abc/def`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user1),
+      });
+
+      expectStatus(response1, 400);
+      const data1 = await parseJson(response1);
+      expect(data1.errors).toBeDefined();
+      expect(data1.message).toBe("Validation failed");
+
+      // Verify custom errorMessage is used
+      const mobileError = data1.errors.find((e: any) => e.field === "mobile");
+      expect(mobileError).toBeDefined();
+      expect(mobileError.message).toBe("Invalid mobile number");
+
+      // Test with valid mobile number
+      const user2 = {
+        email: `test-${Date.now()}@example.com`,
+        mobile: "9876543210", // Valid
+        age: 25,
+      };
+
+      const response2 = await request(`${app.baseUrl}/users/abc/def`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user2),
+      });
+
+      expectStatus(response2, 200);
+      const data2 = await parseJson(response2);
+      expect(data2.data.mobile).toBe("9876543210");
+    });
+
+    test("should validate mobile number length with custom errorMessage", async () => {
+      const user = {
+        email: `test-${Date.now()}@example.com`,
+        mobile: "98765", // Too short
+        age: 25,
+      };
+
+      const response = await request(`${app.baseUrl}/users/abc/def`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user),
+      });
+
+      expectStatus(response, 400);
+      const data = await parseJson(response);
+      expect(data.errors).toBeDefined();
+
+      // Verify custom errorMessage is used
+      const mobileError = data.errors.find((e: any) => e.field === "mobile");
+      expect(mobileError).toBeDefined();
+      expect(mobileError.message).toBe("Invalid mobile number");
+    });
   });
 
   describe("GET /users/:id", () => {

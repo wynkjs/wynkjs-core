@@ -1,6 +1,6 @@
-import { DTO, CommonDTO, Use } from "wynkjs";
+import { DTO, CommonDTO, type Static } from "wynkjs";
 
-export const CreateUserDTO = DTO.Strict({
+export const CreateUserDTO = DTO.Object({
   name: DTO.Optional(DTO.String({ minLength: 2, maxLength: 50 })),
   email: CommonDTO.Email({
     description: "User email address",
@@ -13,7 +13,7 @@ export const CreateUserDTO = DTO.Strict({
   ),
   age: DTO.Optional(DTO.Number({ minimum: 18 })),
 });
-
+export type CreateUserDTOType = Static<typeof CreateUserDTO>;
 export interface CreateUserType {
   name?: string;
   email?: string;

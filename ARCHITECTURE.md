@@ -159,6 +159,41 @@ export class AuthController {
 
 ---
 
+## 🔔 Core Framework Updates (recent)
+
+This project recently updated the WynkJS core. Below are the key runtime and testing changes you should know about.
+
+- **Guards as decorators and middleware**: Guards now support both middleware-style functions (e.g. `jwtGuard`) and class-based decorator usage via an instance `canActivate(context)` method. Use `@UseGuards(AuthGuard)` on controllers or methods to run the guard and attach an authenticated user to the request.
+
+- **Request user propagation**: When a guard verifies a token it attaches the authenticated user to the request/context (`request.user`). Controller handlers should read the authenticated user directly from the request instead of re-parsing the `Authorization` header.
+
+- **Auth utilities**: The `AuthGuard` exposes a verification helper that accepts tokens from header, cookie, or request body. It also validates token expiry (`exp`) during verification.
+
+- **Controller examples**: Example endpoints now include runtime helpers used in tests:
+
+  - `GET /auth/whoami` — reads `request.user` (protected by `@UseGuards(AuthGuard)`).
+  - `GET /auth/me` — reads from `request.user` (works with cookie or header flows).
+  - `POST /auth/verify` — accepts token via body/header/cookie and returns `user` information.
+
+- **Dependency injection & testing**: The core uses `tsyringe` for DI. Tests register mock provider classes with the DI container to avoid starting real DB services. When writing integration tests that start the example app, prefer registering `MockAuthService` replacements so tests don't require database initialization or `onModuleInit` lifecycle for DB providers.
+
+- **reflect-metadata**: Some test files require `import "reflect-metadata"` at the top when using DI/reflection. Add it to any test that bootstraps DI-managed providers under Bun.
+
+- **Test runner and environment**: The project test suite runs with Bun's test runner. Keep tests and spawn scripts free of Node-only preload hooks like `ts-node/register` (avoid `import "dotenv/config"` or `-r ts-node/register` in tests that run under Bun). Use environment setup in CI or test harness instead.
+
+- **Lifecycle error handling**: `WynkFactory` provider lifecycle methods (`onModuleInit`, `onModuleDestroy`) are exercised in tests. The factory handles provider failures during init/destroy; tests assert that the factory continues cleanup on destroy even if one provider throws.
+
+- **CI integration**: A GitHub Actions workflow was added at `.github/workflows/ci.yml` to install Bun, run `bun install`, and execute `bun test tests/ --coverage`. The workflow uploads test artifacts (JUnit/coverage) for further inspection.
+
+---
+
+If you'd like, I can also:
+
+- Add an architecture diagram (SVG) showing request flow (client → rate-limit → jwt guard → controller) and DI wiring.
+- Produce a short migration note for `example/README.md` describing how to adapt older controllers to `request.user`.
+
+---
+
 ## ✅ Testing Checklist
 
 - [ ] Build completes: `npm run build`

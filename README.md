@@ -573,6 +573,82 @@ export function myPlugin(options = {}) {
 app.use(myPlugin({ option: "value" }));
 ```
 
+#### Swagger / OpenAPI Documentation
+
+**✨ New Feature**: WynkJS can use Elysia's Swagger plugin for automatic API documentation!
+
+Since WynkJS is built on top of Elysia, you can use the official `@elysiajs/swagger` plugin to generate interactive API documentation from your WynkJS decorators.
+
+```bash
+bun add @elysiajs/swagger
+```
+
+```typescript
+import { WynkFactory } from "wynkjs";
+import { swagger } from "@elysiajs/swagger";
+
+const app = WynkFactory.create({
+  controllers: [UserController, ProductController],
+});
+
+const server = await app.build();
+
+// Add Swagger documentation
+server.use(
+  swagger({
+    documentation: {
+      info: {
+        title: "My API Documentation",
+        version: "1.0.0",
+        description: "Auto-generated from WynkJS decorators",
+      },
+      tags: [
+        { name: "users", description: "User management" },
+        { name: "products", description: "Product catalog" },
+      ],
+    },
+    path: "/docs",
+  })
+);
+
+server.listen(3000);
+// 📚 Visit: http://localhost:3000/docs
+```
+
+**What gets auto-documented:**
+
+✅ All HTTP routes (@Get, @Post, etc.)  
+✅ Query parameters (from DTOs)  
+✅ Request body schemas (from DTOs)  
+✅ Path parameters (from DTOs)  
+✅ Validation rules (min, max, format)  
+✅ JWT Authentication support
+
+**With JWT Authentication:**
+
+```typescript
+server.use(
+  swagger({
+    documentation: {
+      info: { title: "Secure API", version: "1.0.0" },
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
+          },
+        },
+      },
+      security: [{ bearerAuth: [] }],
+    },
+    path: "/docs",
+  })
+);
+```
+
+📚 See [Swagger Integration Guide](./docs/SWAGGER_INTEGRATION.md) for complete examples and best practices.
+
 ### �🔒 Authentication with Guards
 
 ```typescript

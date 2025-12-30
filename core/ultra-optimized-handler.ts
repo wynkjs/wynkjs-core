@@ -27,6 +27,8 @@ import {
 } from "./decorators/guard.decorators";
 import { executeInterceptors } from "./decorators/interceptor.decorators";
 import { executePipes, ArgumentMetadata } from "./decorators/pipe.decorators";
+import { Request } from "./request";
+import { Response } from "./response";
 import {
   executeExceptionFilters,
   HttpException,
@@ -99,6 +101,11 @@ export function buildUltraOptimizedHandler(
   ) {
     // Direct call - zero overhead!
     return async (ctx: any) => {
+      if (!ctx.__wynk_wrapped__) {
+        ctx.request = new Request(ctx);
+        ctx.response = new Response(ctx);
+        ctx.__wynk_wrapped__ = true;
+      }
       return await instance[methodName](ctx);
     };
   }
@@ -112,6 +119,11 @@ export function buildUltraOptimizedHandler(
     hasParams
   ) {
     return async (ctx: any) => {
+      if (!ctx.__wynk_wrapped__) {
+        ctx.request = new Request(ctx);
+        ctx.response = new Response(ctx);
+        ctx.__wynk_wrapped__ = true;
+      }
       const args: any[] = new Array(params.length);
 
       for (const param of params) {
@@ -185,6 +197,11 @@ export function buildUltraOptimizedHandler(
   // CASE 3: Full-featured handler (has guards/interceptors/filters)
   // This is where we MUST use try-catch, but still avoid nested async
   return async (ctx: any) => {
+    if (!ctx.__wynk_wrapped__) {
+      ctx.request = new Request(ctx);
+      ctx.response = new Response(ctx);
+      ctx.__wynk_wrapped__ = true;
+    }
     try {
       // Guards
       if (hasGuards) {
@@ -389,9 +406,20 @@ export function buildMiddlewareChain(
     return handler;
   }
 
-  return middlewares.reduceRight((next, middleware) => {
+  // Build chain without wrapping in each layer
+  const chain = middlewares.reduceRight((next, middleware) => {
     return async (ctx: any) => {
       return await middleware(ctx, () => next(ctx));
     };
   }, handler);
+  
+  // Wrap ONCE at the top level
+  return async (ctx: any) => {
+    if (!ctx.__wynk_wrapped__) {
+      ctx.request = new Request(ctx);
+      ctx.response = new Response(ctx);
+      ctx.__wynk_wrapped__ = true;
+    }
+    return await chain(ctx);
+  };
 }
