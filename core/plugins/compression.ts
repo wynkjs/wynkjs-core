@@ -19,7 +19,7 @@ export interface CompressionOptions {
 
   /**
    * Preferred encoding order (first match will be used)
-   * @default ["br", "gzip", "deflate"]
+   * @default ["gzip", "br", "deflate"]
    */
   encodings?: ("br" | "gzip" | "deflate")[];
 

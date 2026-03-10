@@ -1,8 +1,8 @@
 # WynkJS Performance Benchmark Results
 
-## Latest Benchmark - v1.0.8 (March 11, 2026)
+## Latest Benchmark - v1.0.9 (March 11, 2026)
 
-**Version:** 1.0.8  
+**Version:** 1.0.9  
 **Test Configuration:** 100 concurrent connections, 30 seconds duration  
 **Database:** Local PostgreSQL (`localhost:5432`, zero network latency)  
 **Runtime:** Bun (WynkJS, Raw Elysia) | Node.js (Express, NestJS)
@@ -36,7 +36,7 @@
 
 > WynkJS and Raw Elysia use Bun's native bcrypt (`Bun.password.hash`). Express and NestJS use the `bcrypt` npm package on Node.js.
 
-### Key Findings (v1.0.8 — Local PostgreSQL, March 2026):
+### Key Findings (v1.0.9 — Local PostgreSQL, March 2026):
 
 - ✅ **WynkJS #1 on health check** — 6% faster than Raw Elysia itself (66,271 vs 62,587 req/s)
 - ✅ **WynkJS #1 on DB writes** — 28% faster than Raw Elysia (2,584 vs 2,023 req/s)

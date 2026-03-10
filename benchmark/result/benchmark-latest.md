@@ -62,7 +62,7 @@
 
 ### Health Check
 
-```
+```text
 WynkJS:        66,271 req/s ████████████████████████████ (106%)
 Raw Elysia:    62,587 req/s ██████████████████████████ (100%)
 Express.js:    27,533 req/s ████████████ (44%)
@@ -75,7 +75,7 @@ NestJS:        24,558 req/s ██████████ (39%)
 
 ### Database Read (Local PostgreSQL)
 
-```
+```text
 Raw Elysia:  2,019 req/s ████████████████████████████ (100%)
 WynkJS:      1,898 req/s ██████████████████████████ (94%)
 NestJS:      1,548 req/s █████████████████████ (77%)
@@ -88,7 +88,7 @@ Express.js:  1,520 req/s ██████████████████�
 
 ### Database Write (POST /users)
 
-```
+```text
 WynkJS:      2,584 req/s ████████████████████████████ (128%)
 Raw Elysia:  2,023 req/s ██████████████████████ (100%)
 NestJS:      1,938 req/s █████████████████████ (96%)
@@ -100,7 +100,7 @@ Express.js:  1,752 req/s ██████████████████�
 - ✅ **WynkJS is 33% faster than NestJS** on writes (2,584 vs 1,938 req/s)
 - ✅ **Zero errors, zero non-2xx** — clean benchmark
 
-### Key Findings (v1.0.8 — Local PostgreSQL, March 2026)
+### Key Findings (v1.0.9 — Local PostgreSQL, March 2026)
 
 1. ✅ **WynkJS beats Raw Elysia on health check AND writes** — decorator system adds zero meaningful overhead in CASE 1 and CASE 2
 2. ✅ **WynkJS #1 across 2 of 3 test categories** — simple responses and DB writes

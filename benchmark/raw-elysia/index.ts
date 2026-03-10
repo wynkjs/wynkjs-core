@@ -87,8 +87,13 @@ const app = new Elysia()
   })
   .post("/users", async ({ body, set }: any) => {
     try {
+      if (!body.password) {
+        set.status = 400;
+        return { error: "Password is required" };
+      }
+
       const hashedPassword = await Bun.password.hash(
-        body.password || "password123",
+        body.password,
         { algorithm: "bcrypt", cost: 4 }
       );
 
@@ -101,7 +106,16 @@ const app = new Elysia()
           lastName: body.lastName,
           password: hashedPassword,
         })
-        .returning();
+        .returning({
+          id: userTable.id,
+          email: userTable.email,
+          username: userTable.username,
+          firstName: userTable.firstName,
+          lastName: userTable.lastName,
+          isActive: userTable.isActive,
+          createdAt: userTable.createdAt,
+          updatedAt: userTable.updatedAt,
+        });
 
       set.status = 201;
       return newUser[0];

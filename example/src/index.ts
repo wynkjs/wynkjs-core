@@ -51,7 +51,7 @@ async function bootstrap() {
       documentation: {
         info: {
           title: "WynkJS Demo API",
-          version: "1.0.0",
+          version: "1.0.9",
           description: `
 # WynkJS Feature Demo
 

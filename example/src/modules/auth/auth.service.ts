@@ -1,4 +1,5 @@
 import { Injectable, Singleton } from "wynkjs";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import type { AuthUser, UserRole } from "./auth.types";
 
 interface StoredUser {
@@ -117,25 +118,34 @@ export class AuthService {
     };
   }
 
-  verifyToken(token: string, _secret: string): any {
+  verifyToken(token: string, secret: string): any {
     try {
-      const decoded = Buffer.from(token.split(".")[1] || "", "base64").toString("utf-8");
-      return JSON.parse(decoded);
+      const parts = token.split(".");
+      if (parts.length !== 3) return null;
+      const [header, body, sig] = parts;
+      const expected = createHmac("sha256", secret).update(`${header}.${body}`).digest("base64url");
+      const sigBuf = Buffer.from(sig);
+      const expBuf = Buffer.from(expected);
+      if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf)) return null;
+      const decoded = Buffer.from(body, "base64url").toString("utf-8");
+      const payload = JSON.parse(decoded);
+      if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) return null;
+      return payload;
     } catch {
       return null;
     }
   }
 
-  createToken(payload: any, _secret: string, expiresIn: number = 3600): string {
-    const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64");
+  createToken(payload: any, secret: string, expiresIn: number = 3600): string {
+    const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
     const body = Buffer.from(
       JSON.stringify({
         ...payload,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + expiresIn,
       })
-    ).toString("base64");
-    const signature = Buffer.from("wynkjs-demo-secret").toString("base64");
+    ).toString("base64url");
+    const signature = createHmac("sha256", secret).update(`${header}.${body}`).digest("base64url");
     return `${header}.${body}.${signature}`;
   }
 }

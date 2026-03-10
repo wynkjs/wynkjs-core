@@ -76,9 +76,8 @@ export class DemoController {
   @UsePipes(DemoTransformPipe)
   getBySlug(@Param("slug") slug: string) {
     return {
-      original: slug,
-      transformed: this.demoService.transform(slug),
-      feature: "@UsePipes — transforms the param value",
+      transformed: slug,
+      feature: "@UsePipes — DemoTransformPipe already ran; slug is the transformed value",
     };
   }
 

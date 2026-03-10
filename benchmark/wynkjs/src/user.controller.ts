@@ -49,19 +49,21 @@ export class UserController {
       };
     }
 
-    // Fetch paginated data
-    const users = await db
+    const rows = await db
       .select(selectFields)
       .from(userTable)
-      .limit(limitNum)
+      .limit(limitNum + 1)
       .offset(offset);
+
+    const hasNext = rows.length > limitNum;
+    const users = hasNext ? rows.slice(0, limitNum) : rows;
 
     return {
       users,
       pagination: {
         page: pageNum,
         limit: limitNum,
-        hasNext: users.length === limitNum,
+        hasNext,
         hasPrev: pageNum > 1,
       },
     };

@@ -107,6 +107,16 @@ describe("ParseFilePipe", () => {
     const pipe = new ParseFilePipe();
     expect(typeof pipe.transform).toBe("function");
   });
+
+  it("rejects an empty file array", async () => {
+    const pipe = new ParseFilePipe();
+    await expect(pipe.transform([])).rejects.toThrow("No file uploaded");
+  });
+
+  it("rejects a non-file object (missing type/size)", async () => {
+    const pipe = new ParseFilePipe();
+    await expect(pipe.transform({ foo: "bar" })).rejects.toThrow();
+  });
 });
 
 // ─── @Sse decorator ───────────────────────────────────────────────────────────
@@ -286,18 +296,19 @@ describe("Provider token patterns - useExisting", () => {
   });
 
   it("creates an alias from one token to another", async () => {
-    const original = { database: "postgres" };
+    const source = { database: "postgres" };
     const app = WynkFactory.create({
       controllers: [],
       providers: [
-        { provide: "DB_CONFIG", useValue: original },
+        { provide: "DB_CONFIG", useValue: source },
         { provide: "DATABASE_CONFIG", useExisting: "DB_CONFIG" },
       ],
     });
     await app.build();
 
-    const resolved = container.resolve("DATABASE_CONFIG" as any);
-    expect(resolved).toEqual(original);
+    const resolvedSource = container.resolve("DB_CONFIG" as any);
+    const resolvedAlias = container.resolve("DATABASE_CONFIG" as any);
+    expect(resolvedAlias).toBe(resolvedSource);
   });
 });
 
