@@ -117,6 +117,8 @@ export enum HttpStatus {
   TOO_MANY_REQUESTS = 429,
   /** 456 Unrecoverable Error */
   UNRECOVERABLE_ERROR = 456,
+
+  // 5xx Server Errors
   /** 500 Internal Server Error */
   INTERNAL_SERVER_ERROR = 500,
   /** 501 Not Implemented */

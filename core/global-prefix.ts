@@ -21,7 +21,7 @@ export interface GlobalPrefixOptions {
 export function applyGlobalPrefix(
   app: Elysia,
   prefix: string | GlobalPrefixOptions,
-): any {
+): Elysia {
   // Normalize prefix
   let prefixStr: string;
   let excludedRoutes: string[] = [];
@@ -43,11 +43,10 @@ export function applyGlobalPrefix(
     return app;
   }
 
-  // Create a new Elysia instance with the prefix
-  const prefixedApp = new Elysia({ prefix: prefixStr });
+  const prefixedApp = new Elysia().use(
+    new Elysia({ prefix: prefixStr }).use(app),
+  );
 
-  // Note: Elysia's prefix option automatically applies to all routes
-  // registered on this instance. We'll return the prefixed instance.
   console.log(`✅ Global prefix applied: ${prefixStr}`);
 
   if (excludedRoutes.length > 0) {
@@ -137,21 +136,21 @@ export function isRouteExcluded(
 export function wrapWithPrefix(
   app: Elysia,
   prefix: string | GlobalPrefixOptions,
-): any {
+): Elysia {
   let prefixStr: string;
+  let excludedRoutes: string[] = [];
 
   if (typeof prefix === "string") {
     prefixStr = prefix;
   } else {
     prefixStr = prefix.prefix;
+    excludedRoutes = prefix.exclude || [];
   }
 
   prefixStr = normalizePrefixPath(prefixStr);
 
-  // Create wrapper app with prefix
   const wrapper = new Elysia();
 
-  // Mount the original app under the prefix
   wrapper.use(
     new Elysia({
       prefix: prefixStr,
@@ -159,6 +158,10 @@ export function wrapWithPrefix(
   );
 
   console.log(`✅ Wrapped existing app with prefix: ${prefixStr}`);
+
+  if (excludedRoutes.length > 0) {
+    console.log(`   Excluded routes: ${excludedRoutes.join(", ")}`);
+  }
 
   return wrapper;
 }

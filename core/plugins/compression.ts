@@ -113,7 +113,7 @@ export function compression(
       const clientEncodings = acceptEncoding
         .split(",")
         .map((part) => {
-          const [enc, qParam] = part.trim().split(";q=");
+          const [enc, qParam] = part.trim().split(/;\s*q=/);
           const q = qParam !== undefined ? parseFloat(qParam) : 1.0;
           return { enc: enc.trim(), q };
         })
