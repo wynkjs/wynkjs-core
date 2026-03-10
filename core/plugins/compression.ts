@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import zlib from "node:zlib";
+import * as zlib from "node:zlib";
 import { promisify } from "node:util";
 
 // Pre-create promisified compression functions at module load time (not per-request)
@@ -19,7 +19,7 @@ export interface CompressionOptions {
 
   /**
    * Preferred encoding order (first match will be used)
-   * @default ["gzip", "br", "deflate"]
+   * @default ["br", "gzip", "deflate"]
    */
   encodings?: ("br" | "gzip" | "deflate")[];
 
@@ -89,7 +89,7 @@ export function compression(
 ): (app: any) => any {
   const config: Required<CompressionOptions> = {
     threshold: options.threshold ?? 1024,
-    encodings: options.encodings ?? ["gzip", "br", "deflate"],
+    encodings: options.encodings ?? ["br", "gzip", "deflate"],
     brotliOptions: options.brotliOptions ?? {},
     zlibOptions: options.zlibOptions ?? {},
   };

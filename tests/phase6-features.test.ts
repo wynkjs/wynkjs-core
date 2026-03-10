@@ -104,6 +104,7 @@ describe("ParseFilePipe", () => {
   });
 
   it("implements WynkPipeTransform interface", () => {
+    const _typeCheck: WynkPipeTransform = new ParseFilePipe(); // compile-time conformance check
     const pipe = new ParseFilePipe();
     expect(typeof pipe.transform).toBe("function");
   });

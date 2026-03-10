@@ -1,6 +1,6 @@
 # WynkJS Framework Benchmark Results
 
-**WynkJS Version:** 1.0.8  
+**WynkJS Version:** v1.0.9  
 **Test Date:** 2026-03-11  
 
 ## Test Configuration
