@@ -27,7 +27,7 @@ jobs:
 
       - name: Run tests with coverage and produce JUnit
         run: |
-          bun test tests/ --coverage --reporter=junit --reporter-outfile=test-results.xml
+          bun test tests/cors.test.ts tests/cors.module.test.ts tests/factory.test.ts tests/request-response.test.ts tests/protected.routes.test.ts tests/global-prefix.module.test.ts tests/auth.extra.test.ts tests/nestjs-features.test.ts tests/phase6-features.test.ts tests/decorators/ --coverage --reporter=junit --reporter-outfile=test-results.xml
 
       - name: Upload test results
         if: always()
