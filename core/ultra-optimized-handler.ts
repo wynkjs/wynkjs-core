@@ -52,9 +52,16 @@ export interface HandlerBuildOptions {
 }
 
 /**
- * Ultra-optimized handler builder
- * Builds a SINGLE async function, not nested closures
- */
+ * Create a highly optimized request handler function for a specific controller method.
+ *
+ * Builds a single specialized async handler based on the supplied options that minimizes
+ * per-request overhead while supporting parameter resolution (including custom factories),
+ * pipes, guards, interceptors, exception filters, and response modifiers (status, headers, redirect).
+ *
+ * @param options - Configuration describing the controller instance, target method, parameter metadata,
+ *                  global guards/interceptors/pipes/filters, and optional response modifiers and route metadata.
+ * @returns The request handler function that accepts the framework context (`ctx`) and returns the controller's
+ *          response value or an error/filtered response object.
 export function buildUltraOptimizedHandler(
   options: HandlerBuildOptions
 ): (ctx: any) => Promise<any> {
@@ -91,6 +98,7 @@ export function buildUltraOptimizedHandler(
   // This eliminates ALL conditional checks at runtime
 
   // CASE 1: Absolute minimal - no features at all (like /health endpoint)
+  // Always attach ctx.request / ctx.response — framework contract.
   if (
     !hasGuards &&
     !hasInterceptors &&
@@ -99,7 +107,6 @@ export function buildUltraOptimizedHandler(
     !hasParams &&
     !hasResponseModifiers
   ) {
-    // Direct call - zero overhead!
     return async (ctx: any) => {
       if (!ctx.__wynk_wrapped__) {
         ctx.request = new Request(ctx);
@@ -111,6 +118,7 @@ export function buildUltraOptimizedHandler(
   }
 
   // CASE 2: Has params but no other features
+  // Always attach ctx.request / ctx.response so method bodies can access them directly.
   if (
     !hasGuards &&
     !hasInterceptors &&
@@ -167,6 +175,16 @@ export function buildUltraOptimizedHandler(
             break;
           case "files":
             value = ctx.body?.files || ctx.files;
+            break;
+          case "custom":
+            if (param.factory) {
+              const execCtx = createExecutionContext(
+                ctx,
+                instance[methodName],
+                ControllerClass
+              );
+              value = param.factory(param.data, execCtx);
+            }
             break;
         }
 
@@ -274,6 +292,16 @@ export function buildUltraOptimizedHandler(
               break;
             case "files":
               value = ctx.body?.files || ctx.files;
+              break;
+            case "custom":
+              if (param.factory) {
+                const execCtx = createExecutionContext(
+                  ctx,
+                  instance[methodName],
+                  ControllerClass
+                );
+                value = param.factory(param.data, execCtx);
+              }
               break;
           }
 

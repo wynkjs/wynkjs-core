@@ -6,12 +6,25 @@ import "reflect-metadata";
  * Optimized for WynkJS's performance on Bun runtime
  */
 
+/**
+ * Options accepted by HTTP method decorators when passed as an object.
+ *
+ * @example
+ * @Post({ path: '/users', body: CreateUserDTO, query: PaginationDTO })
+ * create(@Body() dto: CreateUserType, @Query() q: PaginationQuery) {}
+ */
 export interface RouteOptions {
+  /** Route path (e.g. `'/'`, `'/:id'`). Defaults to `''`. */
   path?: string;
+  /** TypeBox schema used to validate and type the request body. */
   body?: any;
+  /** TypeBox schema used to validate route path parameters. */
   params?: any;
+  /** TypeBox schema used to validate query string parameters. */
   query?: any;
+  /** TypeBox schema used to validate request headers. */
   headers?: any;
+  /** TypeBox schema describing the response shape (informational / Swagger). */
   response?: any;
 }
 
@@ -160,7 +173,12 @@ export function Head(pathOrOptions?: string | RouteOptions): MethodDecorator {
 }
 
 /**
- * Helper function to create route decorators
+ * Create a method decorator that registers route metadata for a controller method.
+ *
+ * @param method - The HTTP method (e.g., "GET", "POST") to associate with the route
+ * @param path - The route path relative to the controller's base path
+ * @param options - Optional route configuration such as body, params, query, headers, response, or flags like `sse`
+ * @returns A MethodDecorator that stores route metadata (method, path, options) on the target method and the controller constructor
  */
 function createRouteDecorator(
   method: string,
@@ -181,21 +199,10 @@ function createRouteDecorator(
       methodName: propertyKey,
       options,
     });
-    console.log(
-      `🔹 Storing route: ${method} ${path} on ${constructor.name}.${String(
-        propertyKey
-      )} (routes: ${routes.length})`
-    );
     Reflect.defineMetadata("routes", routes, constructor.prototype);
 
     // Also store on constructor for compatibility
     Reflect.defineMetadata("routes", routes, constructor);
-
-    // Verify it was stored
-    const verify = Reflect.getMetadata("routes", constructor.prototype) || [];
-    console.log(
-      `✅ Verified ${verify.length} routes stored on ${constructor.name}.prototype`
-    );
 
     // Store method-specific metadata
     Reflect.defineMetadata("route:method", method, target, propertyKey);
@@ -250,13 +257,11 @@ export function Header(name: string, value: string): MethodDecorator {
 }
 
 /**
- * Redirect to a URL
- * @param url URL to redirect to
- * @param statusCode Redirect status code (default: 302)
- * @example
- * @Get('/old-url')
- * @Redirect('/new-url', 301)
- * redirect() {}
+ * Configure a route to redirect clients to the given URL.
+ *
+ * @param url - Destination URL for the redirect.
+ * @param statusCode - HTTP status code to use for the redirect; defaults to 302.
+ * @returns A MethodDecorator that stores redirect metadata `{ url, statusCode }` for the route.
  */
 export function Redirect(
   url: string,
@@ -275,6 +280,40 @@ export function Redirect(
     );
     return descriptor;
   };
+}
+
+/**
+ * Register a GET route configured for Server-Sent Events (SSE).
+ *
+ * The created decorator marks the route as SSE and sets the route options so the framework will use
+ * `Content-Type: text/event-stream` and stream the handler's output. Handlers should return an
+ * AsyncIterable or an object that exposes `subscribe()` (e.g., an Observable) to stream events.
+ *
+ * @param pathOrOptions - Route path string or a {@link RouteOptions} object; when an object is provided its `sse` flag is set automatically
+ * @returns The method decorator that registers the SSE GET route
+ *
+ * @example
+ * ```typescript
+ * @Sse('/events')
+ * streamEvents(): AsyncIterable<MessageEvent> {
+ *   return new Observable(observer => {
+ *     const interval = setInterval(() => observer.next({ data: { time: Date.now() } }), 1000);
+ *     return () => clearInterval(interval);
+ *   });
+ * }
+ * ```
+ */
+export function Sse(pathOrOptions?: string | RouteOptions): MethodDecorator {
+  const path =
+    typeof pathOrOptions === "string"
+      ? pathOrOptions
+      : pathOrOptions?.path || "";
+  const options: RouteOptions & { sse?: boolean } =
+    typeof pathOrOptions === "object" && pathOrOptions !== null
+      ? { ...pathOrOptions, sse: true }
+      : { sse: true };
+
+  return createRouteDecorator("GET", path, options);
 }
 
 /**

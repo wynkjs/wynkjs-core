@@ -6,18 +6,38 @@ import "reflect-metadata";
  */
 
 /**
- * Execution context interface - provides access to request details
+ * Execution context interface — provides typed access to the current request cycle.
+ * Passed to guards, interceptors, and exception filters.
  */
 export interface ExecutionContext {
+  /** Returns the underlying request object (typed as `T`). */
   getRequest<T = any>(): T;
+  /** Returns the underlying response/set object (typed as `T`). */
   getResponse<T = any>(): T;
+  /** Returns the full Elysia context object (typed as `T`). */
   getContext<T = any>(): T;
+  /** Returns the route handler function currently being invoked. */
   getHandler(): Function;
+  /** Returns the controller class that owns the current route handler. */
   getClass(): any;
+  /**
+   * Returns the transport type of the current request.
+   * WynkJS currently always returns `'http'`.
+   */
+  getType(): 'http' | 'ws' | 'rpc';
 }
 
 /**
- * CanActivate interface - All guards must implement this
+ * Interface that all guards must implement.
+ *
+ * @example
+ * @Injectable()
+ * export class AuthGuard implements CanActivate {
+ *   canActivate(context: ExecutionContext): boolean {
+ *     const req = context.getRequest<Request>();
+ *     return req.headers.get('authorization') !== null;
+ *   }
+ * }
  */
 export interface CanActivate {
   canActivate(context: ExecutionContext): boolean | Promise<boolean>;
@@ -64,7 +84,15 @@ export function UseGuards(
 }
 
 /**
- * Helper function to create execution context
+ * Create an ExecutionContext for the current request cycle.
+ *
+ * Provides accessors for the underlying request, response/set, full runtime context,
+ * the active route handler, the controller class, and the transport type.
+ *
+ * @param ctx - The runtime framework context (e.g., Koa/Express context) from which request/response are derived
+ * @param handler - The route handler function being invoked
+ * @param controllerClass - The controller class that owns the route handler
+ * @returns An ExecutionContext exposing `getRequest`, `getResponse`, `getContext`, `getHandler`, `getClass`, and `getType` (returns `'http'`)
  */
 export function createExecutionContext(
   ctx: any,
@@ -77,6 +105,7 @@ export function createExecutionContext(
     getContext: () => ctx,
     getHandler: () => handler,
     getClass: () => controllerClass,
+    getType: () => 'http',
   };
 }
 

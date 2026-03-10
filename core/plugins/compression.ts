@@ -1,4 +1,11 @@
 import { Elysia } from "elysia";
+import zlib from "node:zlib";
+import { promisify } from "node:util";
+
+// Pre-create promisified compression functions at module load time (not per-request)
+const gzipAsync = promisify(zlib.gzip);
+const brotliCompressAsync = promisify(zlib.brotliCompress);
+const deflateAsync = promisify(zlib.deflate);
 
 /**
  * Compression Plugin Options
@@ -55,27 +62,12 @@ export interface CompressionOptions {
  * ```
  */
 /**
- * Compression Plugin for WynkJS
+ * Creates an Elysia middleware that conditionally compresses response bodies using Brotli, Gzip, or Deflate.
  *
- * Simple compression middleware using Elysia's onAfterHandle hook
- * Supports Brotli, Gzip, and Deflate compression
+ * The middleware selects the first supported encoding from the client's Accept-Encoding header, skips compression when a Content-Encoding is already present, and only compresses bodies whose byte length meets or exceeds the configured threshold. When compression reduces size, the response is returned compressed and appropriate headers (Content-Encoding, Vary) are set.
  *
- * @example
- * ```typescript
- * import { WynkFactory, compression } from "wynkjs";
- *
- * const app = WynkFactory.create({
- *   controllers: [UserController],
- * });
- *
- * // Add compression middleware
- * app.use(compression({
- *   threshold: 1024,
- *   encodings: ["gzip", "br"]
- * }));
- *
- * await app.listen(3000);
- * ```
+ * @param options - Compression options to control `threshold`, preferred `encodings`, and algorithm-specific parameters (`brotliOptions`, `zlibOptions`).
+ * @returns A function that installs the compression handler on an Elysia app instance.
  */
 export function compression(
   options: CompressionOptions = {}
@@ -132,25 +124,16 @@ export function compression(
 
       // Compress
       try {
-        const zlib = await import("node:zlib");
-        const { promisify } = await import("node:util");
-
         let compressed: Buffer;
         switch (encoding) {
           case "br":
-            compressed = await promisify(zlib.brotliCompress)(
-              body,
-              config.brotliOptions
-            );
+            compressed = await brotliCompressAsync(body, config.brotliOptions);
             break;
           case "gzip":
-            compressed = await promisify(zlib.gzip)(body, config.zlibOptions);
+            compressed = await gzipAsync(body, config.zlibOptions);
             break;
           case "deflate":
-            compressed = await promisify(zlib.deflate)(
-              body,
-              config.zlibOptions
-            );
+            compressed = await deflateAsync(body, config.zlibOptions);
             break;
           default:
             return;
