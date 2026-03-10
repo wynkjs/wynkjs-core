@@ -36,11 +36,9 @@ export class ParseDatePipe implements WynkPipeTransform<string, Date> {
  * async create(@Body(SanitizePipe) data: any) {}
  */
 export class SanitizePipe implements WynkPipeTransform {
-  private dangerousPatterns = [
-    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-    /javascript:/gi,
-    /on\w+\s*=/gi,
-  ];
+  // ReDoS safety: bounded quantifiers prevent polynomial backtracking on adversarial input.
+  // Script tag removal uses indexOf instead of regex to avoid catastrophic nested-quantifier backtracking.
+  private dangerousPatterns = [/javascript:/gi, /\bon[a-z]{1,30}\s{0,10}=/gi];
 
   transform(value: any, _metadata?: ArgumentMetadata): any {
     if (typeof value === "string") {
@@ -63,13 +61,32 @@ export class SanitizePipe implements WynkPipeTransform {
   }
 
   private sanitizeString(str: string): string {
-    let sanitized = str;
+    let sanitized = this.removeScriptTags(str);
 
     for (const pattern of this.dangerousPatterns) {
       sanitized = sanitized.replace(pattern, "");
     }
 
     return sanitized;
+  }
+
+  private removeScriptTags(str: string): string {
+    let result = str;
+    let offset = 0;
+
+    let start = result.toLowerCase().indexOf("<script", offset);
+    while (start !== -1) {
+      const end = result.toLowerCase().indexOf("</script>", start);
+      if (end === -1) {
+        result = result.slice(0, start);
+        break;
+      }
+      result = result.slice(0, start) + result.slice(end + 9);
+      offset = start;
+      start = result.toLowerCase().indexOf("<script", offset);
+    }
+
+    return result;
   }
 }
 
@@ -153,7 +170,7 @@ export class ValidateEmailPipe implements WynkPipeTransform<string, string> {
 export class ValidateLengthPipe implements WynkPipeTransform {
   constructor(
     private min?: number,
-    private max?: number
+    private max?: number,
   ) {}
 
   transform(value: any, _metadata?: ArgumentMetadata): any {
@@ -166,13 +183,13 @@ export class ValidateLengthPipe implements WynkPipeTransform {
 
     if (this.min !== undefined && length < this.min) {
       throw new BadRequestException(
-        `Length must be at least ${this.min} characters`
+        `Length must be at least ${this.min} characters`,
       );
     }
 
     if (this.max !== undefined && length > this.max) {
       throw new BadRequestException(
-        `Length must not exceed ${this.max} characters`
+        `Length must not exceed ${this.max} characters`,
       );
     }
 
@@ -189,7 +206,7 @@ export class ValidateLengthPipe implements WynkPipeTransform {
 export class ValidateRangePipe implements WynkPipeTransform<number, number> {
   constructor(
     private min?: number,
-    private max?: number
+    private max?: number,
   ) {}
 
   transform(value: number, _metadata?: ArgumentMetadata): number {
@@ -223,7 +240,7 @@ export class StripHTMLPipe implements WynkPipeTransform<string, string> {
       return value;
     }
 
-    return value.replace(/<[^>]*>/g, "");
+    return value.replace(/<[^>]{0,2000}>/g, "");
   }
 }
 
@@ -244,7 +261,8 @@ export class SlugifyPipe implements WynkPipeTransform<string, string> {
       .trim()
       .replace(/[^\w\s-]/g, "")
       .replace(/[\s_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+      .replace(/^-+/g, "")
+      .replace(/-+$/g, "");
   }
 }
 
@@ -254,9 +272,10 @@ export class SlugifyPipe implements WynkPipeTransform<string, string> {
  * @Get()
  * async search(@Query('tags', ParseCommaSeparatedPipe) tags: string[]) {}
  */
-export class ParseCommaSeparatedPipe
-  implements WynkPipeTransform<string, string[]>
-{
+export class ParseCommaSeparatedPipe implements WynkPipeTransform<
+  string,
+  string[]
+> {
   constructor(private trim: boolean = true) {}
 
   transform(value: string, _metadata?: ArgumentMetadata): string[] {
