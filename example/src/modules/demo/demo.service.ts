@@ -17,6 +17,10 @@ export class DemoService implements OnModuleInit {
     return this.items;
   }
 
+  removeItem(name: string): void {
+    this.items = this.items.filter((i) => i !== name);
+  }
+
   transform(value: string): string {
     return value.trim().toLowerCase().replace(/\s+/g, "-");
   }
