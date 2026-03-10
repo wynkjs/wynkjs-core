@@ -61,7 +61,8 @@
   "devDependencies": {
     "@types/bun": "latest",
     "elysia": "^1.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "wynkjs": "file:."
   },
   "engines": {
     "bun": ">=1.0.0"
