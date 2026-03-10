@@ -63,8 +63,8 @@ export interface WynkInterceptor {
   intercept(context: ExecutionContext, next: () => Promise<any>): Promise<any>;
 }
 
-/** NestJS-compatible alias for {@link WynkInterceptor}. */
-export type NestInterceptor = WynkInterceptor;
+/** NestJS-compatible generic alias for {@link WynkInterceptor}. */
+export type NestInterceptor<T = any, R = any> = WynkInterceptor;
 
 /**
  * @UseInterceptors decorator - Apply interceptors to routes or controllers
@@ -84,7 +84,7 @@ export function UseInterceptors(
   return (
     target: any,
     propertyKey?: string | symbol,
-    descriptor?: PropertyDescriptor
+    descriptor?: PropertyDescriptor,
   ) => {
     if (propertyKey && descriptor) {
       // Method decorator
@@ -94,7 +94,7 @@ export function UseInterceptors(
         "interceptors",
         [...existing, ...interceptors],
         target,
-        propertyKey
+        propertyKey,
       );
       return descriptor;
     } else {
@@ -103,7 +103,7 @@ export function UseInterceptors(
       Reflect.defineMetadata(
         "interceptors",
         [...existing, ...interceptors],
-        target
+        target,
       );
       return target;
     }
@@ -116,7 +116,7 @@ export function UseInterceptors(
 export async function executeInterceptors(
   interceptors: (Function | WynkInterceptor)[],
   context: InterceptorContext,
-  handler: () => Promise<any>
+  handler: () => Promise<any>,
 ): Promise<any> {
   // Build interceptor chain
   // First interceptor in array is innermost (transforms first, closest to handler)
@@ -136,7 +136,7 @@ export async function executeInterceptors(
         try {
           interceptorInstances.set(
             interceptor,
-            container.resolve(interceptor as any)
+            container.resolve(interceptor as any),
           );
         } catch {
           interceptorInstances.set(interceptor, new (interceptor as any)());
@@ -180,7 +180,7 @@ export class TransformInterceptor implements WynkInterceptor {
 
   async intercept(
     context: InterceptorContext,
-    next: () => Promise<any>
+    next: () => Promise<any>,
   ): Promise<any> {
     const data = await next();
 
@@ -209,12 +209,12 @@ export class TimeoutInterceptor implements WynkInterceptor {
 
   async intercept(
     context: InterceptorContext,
-    next: () => Promise<any>
+    next: () => Promise<any>,
   ): Promise<any> {
     return Promise.race([
       next(),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Request timeout")), this.timeout)
+        setTimeout(() => reject(new Error("Request timeout")), this.timeout),
       ),
     ]);
   }
@@ -237,7 +237,7 @@ export class CacheInterceptor implements WynkInterceptor {
 
   async intercept(
     context: InterceptorContext,
-    next: () => Promise<any>
+    next: () => Promise<any>,
   ): Promise<any> {
     const request = context.getRequest();
     const cacheKey = `${request.method}:${request.url}`;
@@ -266,7 +266,7 @@ export class CacheInterceptor implements WynkInterceptor {
 export class LoggingInterceptor implements WynkInterceptor {
   async intercept(
     context: InterceptorContext,
-    next: () => Promise<any>
+    next: () => Promise<any>,
   ): Promise<any> {
     const request = context.getRequest();
     const startTime = Date.now();
@@ -277,13 +277,13 @@ export class LoggingInterceptor implements WynkInterceptor {
       const data = await next();
       const duration = Date.now() - startTime;
       console.log(
-        `📤 ${request.method} ${request.url} - Completed in ${duration}ms`
+        `📤 ${request.method} ${request.url} - Completed in ${duration}ms`,
       );
       return data;
     } catch (error) {
       const duration = Date.now() - startTime;
       console.log(
-        `❌ ${request.method} ${request.url} - Failed in ${duration}ms`
+        `❌ ${request.method} ${request.url} - Failed in ${duration}ms`,
       );
       throw error;
     }

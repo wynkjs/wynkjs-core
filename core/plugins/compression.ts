@@ -85,7 +85,7 @@ export interface CompressionOptions {
  * ```
  */
 export function compression(
-  options: CompressionOptions = {}
+  options: CompressionOptions = {},
 ): (app: any) => any {
   const config: Required<CompressionOptions> = {
     threshold: options.threshold ?? 1024,
@@ -104,15 +104,27 @@ export function compression(
       // Skip if already compressed
       if (set.headers?.["content-encoding"]) return;
 
-      // Get client's accepted encodings
+      // Get client's accepted encodings with proper RFC q-value parsing
       const acceptEncoding = (
         request.headers.get("accept-encoding") || ""
       ).toLowerCase();
 
-      // Find best compression match
+      // Parse Accept-Encoding header respecting q-values per RFC 7231 §5.3.4
+      const clientEncodings = acceptEncoding
+        .split(",")
+        .map((part) => {
+          const [enc, qParam] = part.trim().split(";q=");
+          const q = qParam !== undefined ? parseFloat(qParam) : 1.0;
+          return { enc: enc.trim(), q };
+        })
+        .filter(({ q }) => q !== 0)
+        .sort((a, b) => b.q - a.q)
+        .map(({ enc }) => enc);
+
+      // Find best compression match: prefer server encoding order, skip q=0
       let encoding: "br" | "gzip" | "deflate" | null = null;
       for (const enc of config.encodings) {
-        if (acceptEncoding.includes(enc)) {
+        if (clientEncodings.includes(enc)) {
           encoding = enc;
           break;
         }

@@ -20,7 +20,7 @@ export interface GlobalPrefixOptions {
  */
 export function applyGlobalPrefix(
   app: Elysia,
-  prefix: string | GlobalPrefixOptions
+  prefix: string | GlobalPrefixOptions,
 ): any {
   // Normalize prefix
   let prefixStr: string;
@@ -38,7 +38,7 @@ export function applyGlobalPrefix(
 
   if (!prefixStr) {
     console.warn(
-      "⚠️  Global prefix is empty after normalization. Skipping prefix setup."
+      "⚠️  Global prefix is empty after normalization. Skipping prefix setup.",
     );
     return app;
   }
@@ -86,7 +86,7 @@ export function normalizePrefixPath(prefix: string): string {
   const validPattern = /^\/[\w\-\/]*$/;
   if (!validPattern.test(normalized)) {
     throw new Error(
-      `Invalid global prefix format: "${prefix}". Only alphanumeric, hyphens, underscores, and forward slashes are allowed.`
+      `Invalid global prefix format: "${prefix}". Only alphanumeric, hyphens, underscores, and forward slashes are allowed.`,
     );
   }
 
@@ -101,7 +101,7 @@ export function normalizePrefixPath(prefix: string): string {
  */
 export function isRouteExcluded(
   path: string,
-  excludedRoutes: string[]
+  excludedRoutes: string[],
 ): boolean {
   if (!excludedRoutes || excludedRoutes.length === 0) {
     return false;
@@ -136,16 +136,14 @@ export function isRouteExcluded(
  */
 export function wrapWithPrefix(
   app: Elysia,
-  prefix: string | GlobalPrefixOptions
+  prefix: string | GlobalPrefixOptions,
 ): any {
   let prefixStr: string;
-  let _excludedRoutes: string[] = [];
 
   if (typeof prefix === "string") {
     prefixStr = prefix;
   } else {
     prefixStr = prefix.prefix;
-    _excludedRoutes = prefix.exclude || [];
   }
 
   prefixStr = normalizePrefixPath(prefixStr);
@@ -157,7 +155,7 @@ export function wrapWithPrefix(
   wrapper.use(
     new Elysia({
       prefix: prefixStr,
-    }).use(app)
+    }).use(app),
   );
 
   console.log(`✅ Wrapped existing app with prefix: ${prefixStr}`);
@@ -171,7 +169,7 @@ export function wrapWithPrefix(
  * @returns true if valid, throws error if invalid
  */
 export function validateGlobalPrefix(
-  prefix: string | GlobalPrefixOptions
+  prefix: string | GlobalPrefixOptions,
 ): boolean {
   if (typeof prefix === "string") {
     // Validate string prefix
@@ -205,7 +203,7 @@ export function validateGlobalPrefix(
       prefix.exclude.forEach((route) => {
         if (typeof route !== "string") {
           throw new Error(
-            "All routes in GlobalPrefixOptions.exclude must be strings"
+            "All routes in GlobalPrefixOptions.exclude must be strings",
           );
         }
       });

@@ -31,6 +31,13 @@ export class ParseDatePipe implements WynkPipeTransform<string, Date> {
 
 /**
  * Sanitize Pipe - Sanitizes input by removing dangerous characters
+ *
+ * SECURITY NOTICE: This pipe provides basic normalization (script tag removal,
+ * javascript: protocol stripping, inline event handler removal). It is NOT a
+ * replacement for a dedicated XSS sanitization library such as `sanitize-html`
+ * or `DOMPurify` when rendering user content as HTML. Use this pipe for
+ * light input cleaning only; apply a full sanitizer at the HTML rendering layer.
+ *
  * @example
  * @Post()
  * async create(@Body(SanitizePipe) data: any) {}
@@ -146,7 +153,8 @@ export class ParseJSONPipe implements WynkPipeTransform<string, any> {
  * async create(@Body('email', ValidateEmailPipe) email: string) {}
  */
 export class ValidateEmailPipe implements WynkPipeTransform<string, string> {
-  private emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  private emailRegex =
+    /^[a-zA-Z0-9._%+\-]{1,64}@[a-zA-Z0-9.\-]{1,253}\.[a-zA-Z]{2,}$/;
 
   transform(value: string, _metadata?: ArgumentMetadata): string {
     if (!value) {

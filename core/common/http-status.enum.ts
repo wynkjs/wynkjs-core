@@ -43,6 +43,10 @@ export enum HttpStatus {
   PARTIAL_CONTENT = 206,
   /** 207 Multi-Status */
   MULTI_STATUS = 207,
+  /** 208 Already Reported */
+  ALREADY_REPORTED = 208,
+  /** 210 Content Different */
+  CONTENT_DIFFERENT = 210,
 
   // 3xx Redirection
   /** 300 Multiple Choices */
@@ -103,10 +107,16 @@ export enum HttpStatus {
   MISDIRECTED = 421,
   /** 422 Unprocessable Entity */
   UNPROCESSABLE_ENTITY = 422,
+  /** 423 Locked */
+  LOCKED = 423,
   /** 424 Failed Dependency */
   FAILED_DEPENDENCY = 424,
+  /** 428 Precondition Required */
+  PRECONDITION_REQUIRED = 428,
   /** 429 Too Many Requests */
   TOO_MANY_REQUESTS = 429,
+  /** 456 Unrecoverable Error */
+  UNRECOVERABLE_ERROR = 456,
   /** 500 Internal Server Error */
   INTERNAL_SERVER_ERROR = 500,
   /** 501 Not Implemented */
@@ -119,4 +129,8 @@ export enum HttpStatus {
   GATEWAY_TIMEOUT = 504,
   /** 505 HTTP Version Not Supported */
   HTTP_VERSION_NOT_SUPPORTED = 505,
+  /** 507 Insufficient Storage */
+  INSUFFICIENT_STORAGE = 507,
+  /** 508 Loop Detected */
+  LOOP_DETECTED = 508,
 }
