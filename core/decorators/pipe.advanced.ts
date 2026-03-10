@@ -43,9 +43,7 @@ export class ParseDatePipe implements WynkPipeTransform<string, Date> {
  * async create(@Body(SanitizePipe) data: any) {}
  */
 export class SanitizePipe implements WynkPipeTransform {
-  // ReDoS safety: bounded quantifiers prevent polynomial backtracking on adversarial input.
-  // Script tag removal uses indexOf instead of regex to avoid catastrophic nested-quantifier backtracking.
-  private dangerousPatterns = [/javascript:/gi, /\bon[a-z]{1,30}\s{0,10}=/gi];
+  private dangerousPatterns = [/javascript:/gi];
 
   transform(value: any, _metadata?: ArgumentMetadata): any {
     if (typeof value === "string") {
@@ -74,7 +72,47 @@ export class SanitizePipe implements WynkPipeTransform {
       sanitized = sanitized.replace(pattern, "");
     }
 
+    sanitized = this.removeEventHandlers(sanitized);
+
     return sanitized;
+  }
+
+  private removeEventHandlers(str: string): string {
+    let result = str;
+    let i = 0;
+    while (i < result.length - 2) {
+      if (result[i] === "o" && result[i + 1] === "n") {
+        const attrStart = i;
+        let j = i + 2;
+        while (
+          j < result.length &&
+          ((result[j] >= "a" && result[j] <= "z") ||
+            (result[j] >= "A" && result[j] <= "Z"))
+        ) {
+          j++;
+          if (j - (i + 2) > 30) break;
+        }
+        if (j > i + 2 && j < result.length) {
+          let k = j;
+          while (
+            k < result.length &&
+            (result[k] === " " ||
+              result[k] === "\t" ||
+              result[k] === "\n" ||
+              result[k] === "\r")
+          ) {
+            k++;
+          }
+          if (k < result.length && result[k] === "=") {
+            result = result.slice(0, attrStart) + result.slice(k + 1);
+            i = attrStart;
+            continue;
+          }
+        }
+      }
+      i++;
+    }
+    return result;
   }
 
   private removeScriptTags(str: string): string {
@@ -118,7 +156,7 @@ export class TransformCasePipe implements WynkPipeTransform<string, string> {
         return value.toUpperCase();
       case "title":
         return value.replace(/\w\S*/g, (txt) => {
-          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+          return txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase();
         });
       default:
         return value;
@@ -162,6 +200,16 @@ export class ValidateEmailPipe implements WynkPipeTransform<string, string> {
     }
 
     if (!this.emailRegex.test(value)) {
+      throw new BadRequestException("Invalid email format");
+    }
+
+    const [, domain] = value.split("@");
+    const labels = domain.split(".");
+    const domainInvalid = labels.some(
+      (label) =>
+        label.length === 0 || label.startsWith("-") || label.endsWith("-"),
+    );
+    if (domainInvalid) {
       throw new BadRequestException("Invalid email format");
     }
 
