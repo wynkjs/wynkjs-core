@@ -3,7 +3,7 @@ import { DatabaseService } from "./database.service";
 import { CreateUserDTO, UserIdDTO } from "./user.dto";
 import type { CreateUserType, UserIdType } from "./user.dto";
 import { userTable } from "./schema";
-import { eq, sql, count } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 @Injectable()
 @Controller("/users")
@@ -49,11 +49,6 @@ export class UserController {
       };
     }
 
-    // Get total count efficiently (without fetching rows)
-    const [{ value: totalCount }] = await db
-      .select({ value: count() })
-      .from(userTable);
-
     // Fetch paginated data
     const users = await db
       .select(selectFields)
@@ -66,9 +61,7 @@ export class UserController {
       pagination: {
         page: pageNum,
         limit: limitNum,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limitNum),
-        hasNext: pageNum * limitNum < totalCount,
+        hasNext: users.length === limitNum,
         hasPrev: pageNum > 1,
       },
     };

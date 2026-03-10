@@ -1,4 +1,11 @@
 import { Elysia } from "elysia";
+import zlib from "node:zlib";
+import { promisify } from "node:util";
+
+// Pre-create promisified compression functions at module load time (not per-request)
+const gzipAsync = promisify(zlib.gzip);
+const brotliCompressAsync = promisify(zlib.brotliCompress);
+const deflateAsync = promisify(zlib.deflate);
 
 /**
  * Compression Plugin Options
@@ -132,25 +139,16 @@ export function compression(
 
       // Compress
       try {
-        const zlib = await import("node:zlib");
-        const { promisify } = await import("node:util");
-
         let compressed: Buffer;
         switch (encoding) {
           case "br":
-            compressed = await promisify(zlib.brotliCompress)(
-              body,
-              config.brotliOptions
-            );
+            compressed = await brotliCompressAsync(body, config.brotliOptions);
             break;
           case "gzip":
-            compressed = await promisify(zlib.gzip)(body, config.zlibOptions);
+            compressed = await gzipAsync(body, config.zlibOptions);
             break;
           case "deflate":
-            compressed = await promisify(zlib.deflate)(
-              body,
-              config.zlibOptions
-            );
+            compressed = await deflateAsync(body, config.zlibOptions);
             break;
           default:
             return;

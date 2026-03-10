@@ -45,6 +45,12 @@ export * from "./decorators/guard.decorators";
 export * from "./decorators/interceptor.decorators";
 export * from "./decorators/interceptor.advanced";
 
+// Metadata System (@SetMetadata, Reflector, applyDecorators, createParamDecorator)
+export * from "./decorators/metadata.decorators";
+
+// DI Decorators (@Optional)
+export * from "./decorators/di.decorators";
+
 // Pipe System
 export * from "./decorators/pipe.decorators";
 export * from "./decorators/pipe.advanced";
@@ -83,6 +89,18 @@ export { schemaRegistry } from "./schema-registry";
 
 // Application Factory
 export * from "./factory";
+
+// Module System (@Module, @Global, ModuleMetadata, DynamicModule)
+export * from "./module";
+
+// Lifecycle Hook Interfaces
+export * from "./interfaces/lifecycle.interface";
+
+// InterceptorContext interface
+export type { InterceptorContext } from "./interfaces/interceptor.interface";
+
+// HttpStatus enum
+export * from "./common/http-status.enum";
 
 // CORS Module
 export type { CorsOptions } from "./cors";

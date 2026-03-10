@@ -10,9 +10,6 @@ export async function initDatabase() {
     try {
         pool = new Pool({
             connectionString: process.env.DATABASE_URL,
-            max: 100,  // Increased for high concurrency benchmarking
-            idleTimeoutMillis: 30000,
-            connectionTimeoutMillis: 2000,
         });
 
         db = drizzle(pool, { schema, logger: false });

@@ -6,18 +6,47 @@ import "reflect-metadata";
  */
 
 /**
- * WynkPipeTransform interface - All pipes must implement this
+ * Interface that all WynkJS pipes must implement.
+ *
+ * Pipes transform or validate incoming values before they reach the route handler.
+ * They are applied per-parameter via `@UsePipes()` or globally via
+ * `app.useGlobalPipes()`.
+ *
+ * @template T - The input value type
+ * @template R - The output (transformed) value type
+ *
+ * @example
+ * ```typescript
+ * export class UpperCasePipe implements WynkPipeTransform<string, string> {
+ *   transform(value: string): string {
+ *     return value.toUpperCase();
+ *   }
+ * }
+ * ```
  */
 export interface WynkPipeTransform<T = any, R = any> {
+  /**
+   * Transform or validate the value.
+   *
+   * @param value - The raw input value from the request
+   * @param metadata - Context about where the value came from (body, query, param, custom)
+   * @returns The transformed value, or a Promise resolving to it
+   */
   transform(value: T, metadata?: ArgumentMetadata): R | Promise<R>;
 }
 
 /**
- * Argument metadata interface
+ * Metadata describing the source and type of a route handler parameter.
+ *
+ * Passed to `WynkPipeTransform.transform()` so pipes can make decisions
+ * based on where the value came from.
  */
 export interface ArgumentMetadata {
+  /** Where the value was extracted from. */
   type: "body" | "query" | "param" | "custom";
+  /** The TypeScript class/constructor of the parameter (if available via reflection). */
   metatype?: any;
+  /** The key used to extract a specific field (e.g. `id` in `@Param('id')`). */
   data?: string;
 }
 
@@ -509,5 +538,65 @@ export class DetailedErrorPipe extends ValidationPipe {
         };
       },
     });
+  }
+}
+
+/**
+ * Built-in pipe that validates uploaded files by MIME type and/or file size.
+ *
+ * Throws a `BadRequestException`-style error when a file's type or size
+ * does not satisfy the configured constraints.
+ *
+ * @example
+ * ```typescript
+ * @Post('/upload')
+ * uploadFile(@UploadedFile(new ParseFilePipe({ fileType: 'image/jpeg', maxSize: 5_000_000 })) file: File) {}
+ * ```
+ */
+export class ParseFilePipe implements WynkPipeTransform<File | File[], File | File[]> {
+  constructor(
+    private readonly options: {
+      /**
+       * Expected MIME type (e.g. `'image/jpeg'`).
+       * Throws if the uploaded file's `type` does not match.
+       */
+      fileType?: string;
+      /**
+       * Maximum allowed file size in **bytes**.
+       * Throws if the uploaded file's `size` exceeds this value.
+       */
+      maxSize?: number;
+    } = {}
+  ) {}
+
+  /**
+   * Validates the uploaded file(s) against the configured constraints.
+   *
+   * @param value - The uploaded `File` or `File[]` from the request.
+   * @param _metadata - Argument metadata (unused but required by interface).
+   * @returns The original value when validation passes.
+   * @throws `Error` when no file is provided, the file type is wrong, or the file exceeds the max size.
+   */
+  async transform(value: any, _metadata?: ArgumentMetadata): Promise<any> {
+    if (value === undefined || value === null) {
+      throw new Error("Validation failed: No file uploaded");
+    }
+
+    const files: any[] = Array.isArray(value) ? value : [value];
+
+    for (const file of files) {
+      if (this.options.fileType && file.type !== this.options.fileType) {
+        throw new Error(
+          `Validation failed: File type "${file.type}" is not allowed. Expected "${this.options.fileType}"`
+        );
+      }
+      if (this.options.maxSize !== undefined && file.size > this.options.maxSize) {
+        throw new Error(
+          `Validation failed: File size ${file.size} bytes exceeds the maximum of ${this.options.maxSize} bytes`
+        );
+      }
+    }
+
+    return value;
   }
 }

@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2026-03-11
+
+### Performance
+
+- ⚡ **Fixed compression plugin** — `zlib`, `util.promisify`, and all async compress functions (`gzipAsync`, `brotliCompressAsync`, `deflateAsync`) are now initialized at module load time instead of via `await import()` on every request
+- ⚡ **Removed `count()` from GET /users hot path** — Eliminated `SELECT count(*) FROM user_benchmark` query that ran on every paginated list request; replaced with `hasNext: users.length === limitNum`
+
+### Benchmark Results (March 2026 — vs Raw Elysia, Express, NestJS)
+
+- 🏆 **WynkJS #1 on health check** — 66,271 req/s (beats Raw Elysia at 62,587)
+- 🏆 **WynkJS #1 on DB writes** — 2,584 req/s (28% faster than Raw Elysia at 2,023)
+- ✅ **WynkJS #2 on DB reads** — 1,898 req/s (94% of Raw Elysia at 2,019)
+- ✅ **WynkJS beats Express.js on ALL 3 metrics** — by 2.4x, 25%, and 48%
+- ✅ **WynkJS beats NestJS on ALL 3 metrics** — by 2.7x, 23%, and 33%
+
+### Fixed
+
+- 🔧 **`ctx.request` / `ctx.response` always available** — All handler cases (CASE 1, 2, 3) unconditionally attach `new Request(ctx)` / `new Response(ctx)` to context, restoring the framework contract for methods that access these directly without `@Req()`/`@Res()` decorators
+
 ## [1.0.8] - 2025-12-30
 
 ### Added

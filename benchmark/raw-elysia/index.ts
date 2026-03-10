@@ -20,7 +20,7 @@ import "dotenv/config";
 const userTable = pgTable("user_benchmark", {
   id: uuid("id").primaryKey().defaultRandom(),
   username: varchar("username", { length: 100 }),
-  email: varchar("email", { length: 255 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull(),
   mobile: varchar("mobile", { length: 20 }),
   password: varchar("password", { length: 255 }),
   firstName: varchar("first_name", { length: 100 }),
@@ -35,9 +35,6 @@ const userTable = pgTable("user_benchmark", {
 // Database connection
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
 });
 
 const db = drizzle(pool);
@@ -90,6 +87,11 @@ const app = new Elysia()
   })
   .post("/users", async ({ body, set }: any) => {
     try {
+      const hashedPassword = await Bun.password.hash(
+        body.password || "password123",
+        { algorithm: "bcrypt", cost: 4 }
+      );
+
       const newUser = await db
         .insert(userTable)
         .values({
@@ -97,6 +99,7 @@ const app = new Elysia()
           username: body.username || body.name,
           firstName: body.firstName,
           lastName: body.lastName,
+          password: hashedPassword,
         })
         .returning();
 

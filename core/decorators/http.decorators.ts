@@ -6,12 +6,25 @@ import "reflect-metadata";
  * Optimized for WynkJS's performance on Bun runtime
  */
 
+/**
+ * Options accepted by HTTP method decorators when passed as an object.
+ *
+ * @example
+ * @Post({ path: '/users', body: CreateUserDTO, query: PaginationDTO })
+ * create(@Body() dto: CreateUserType, @Query() q: PaginationQuery) {}
+ */
 export interface RouteOptions {
+  /** Route path (e.g. `'/'`, `'/:id'`). Defaults to `''`. */
   path?: string;
+  /** TypeBox schema used to validate and type the request body. */
   body?: any;
+  /** TypeBox schema used to validate route path parameters. */
   params?: any;
+  /** TypeBox schema used to validate query string parameters. */
   query?: any;
+  /** TypeBox schema used to validate request headers. */
   headers?: any;
+  /** TypeBox schema describing the response shape (informational / Swagger). */
   response?: any;
 }
 
@@ -181,21 +194,10 @@ function createRouteDecorator(
       methodName: propertyKey,
       options,
     });
-    console.log(
-      `🔹 Storing route: ${method} ${path} on ${constructor.name}.${String(
-        propertyKey
-      )} (routes: ${routes.length})`
-    );
     Reflect.defineMetadata("routes", routes, constructor.prototype);
 
     // Also store on constructor for compatibility
     Reflect.defineMetadata("routes", routes, constructor);
-
-    // Verify it was stored
-    const verify = Reflect.getMetadata("routes", constructor.prototype) || [];
-    console.log(
-      `✅ Verified ${verify.length} routes stored on ${constructor.name}.prototype`
-    );
 
     // Store method-specific metadata
     Reflect.defineMetadata("route:method", method, target, propertyKey);
@@ -275,6 +277,40 @@ export function Redirect(
     );
     return descriptor;
   };
+}
+
+/**
+ * Server-Sent Events (SSE) decorator — registers a GET route that streams
+ * events to the client using the `text/event-stream` content type.
+ *
+ * The handler must return an `AsyncIterable` or an object with `subscribe()`.
+ * WynkJS sets `Content-Type: text/event-stream` and marks the route as SSE
+ * so the factory can configure the correct response streaming.
+ *
+ * @param pathOrOptions Route path string or {@link RouteOptions} object.
+ *
+ * @example
+ * ```typescript
+ * @Sse('/events')
+ * streamEvents(): AsyncIterable<MessageEvent> {
+ *   return new Observable(observer => {
+ *     const interval = setInterval(() => observer.next({ data: { time: Date.now() } }), 1000);
+ *     return () => clearInterval(interval);
+ *   });
+ * }
+ * ```
+ */
+export function Sse(pathOrOptions?: string | RouteOptions): MethodDecorator {
+  const path =
+    typeof pathOrOptions === "string"
+      ? pathOrOptions
+      : pathOrOptions?.path || "";
+  const options: RouteOptions & { sse?: boolean } =
+    typeof pathOrOptions === "object" && pathOrOptions !== null
+      ? { ...pathOrOptions, sse: true }
+      : { sse: true };
+
+  return createRouteDecorator("GET", path, options);
 }
 
 /**

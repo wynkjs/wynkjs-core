@@ -14,18 +14,57 @@ const interceptorInstances = new Map<Function, WynkInterceptor>();
  */
 
 /**
- * Call handler interface for interceptors
+ * Provides access to the handler return value as a promise.
+ *
+ * Passed as the second argument to `WynkInterceptor.intercept()`. Call
+ * `handle()` to invoke the next interceptor in the chain or the actual route
+ * handler. You can `await` the result to inspect or transform the response.
+ *
+ * @template T - The type of value returned by the handler
  */
 export interface CallHandler<T = any> {
+  /** Invoke the next interceptor or the route handler and return its result. */
   handle(): Promise<T>;
 }
 
 /**
- * WynkInterceptor interface - All interceptors must implement this
+ * Interface that all WynkJS interceptors must implement.
+ *
+ * Interceptors sit between the client request and the route handler. They can
+ * execute logic before AND after the handler, transform the result, catch errors,
+ * and even override the response entirely.
+ *
+ * Use `@UseInterceptors()` to apply an interceptor to a controller or route.
+ *
+ * @example
+ * ```typescript
+ * import { Injectable } from "wynkjs";
+ * import { WynkInterceptor } from "wynkjs";
+ *
+ * @Injectable()
+ * export class LoggingInterceptor implements WynkInterceptor {
+ *   async intercept(context: ExecutionContext, next: () => Promise<any>) {
+ *     console.log("Before handler");
+ *     const result = await next();
+ *     console.log("After handler");
+ *     return result;
+ *   }
+ * }
+ * ```
  */
 export interface WynkInterceptor {
+  /**
+   * Called for every request that passes through this interceptor.
+   *
+   * @param context - The execution context for the current request
+   * @param next - Call `next()` to invoke the next interceptor / route handler
+   * @returns The (possibly transformed) response value
+   */
   intercept(context: ExecutionContext, next: () => Promise<any>): Promise<any>;
 }
+
+/** NestJS-compatible alias for {@link WynkInterceptor}. */
+export type NestInterceptor = WynkInterceptor;
 
 /**
  * @UseInterceptors decorator - Apply interceptors to routes or controllers

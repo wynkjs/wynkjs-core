@@ -91,6 +91,7 @@ export function buildUltraOptimizedHandler(
   // This eliminates ALL conditional checks at runtime
 
   // CASE 1: Absolute minimal - no features at all (like /health endpoint)
+  // Always attach ctx.request / ctx.response — framework contract.
   if (
     !hasGuards &&
     !hasInterceptors &&
@@ -99,7 +100,6 @@ export function buildUltraOptimizedHandler(
     !hasParams &&
     !hasResponseModifiers
   ) {
-    // Direct call - zero overhead!
     return async (ctx: any) => {
       if (!ctx.__wynk_wrapped__) {
         ctx.request = new Request(ctx);
@@ -111,6 +111,7 @@ export function buildUltraOptimizedHandler(
   }
 
   // CASE 2: Has params but no other features
+  // Always attach ctx.request / ctx.response so method bodies can access them directly.
   if (
     !hasGuards &&
     !hasInterceptors &&
@@ -167,6 +168,16 @@ export function buildUltraOptimizedHandler(
             break;
           case "files":
             value = ctx.body?.files || ctx.files;
+            break;
+          case "custom":
+            if (param.factory) {
+              const execCtx = createExecutionContext(
+                ctx,
+                instance[methodName],
+                ControllerClass
+              );
+              value = param.factory(param.data, execCtx);
+            }
             break;
         }
 
@@ -274,6 +285,16 @@ export function buildUltraOptimizedHandler(
               break;
             case "files":
               value = ctx.body?.files || ctx.files;
+              break;
+            case "custom":
+              if (param.factory) {
+                const execCtx = createExecutionContext(
+                  ctx,
+                  instance[methodName],
+                  ControllerClass
+                );
+                value = param.factory(param.data, execCtx);
+              }
               break;
           }
 

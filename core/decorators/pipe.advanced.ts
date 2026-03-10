@@ -30,49 +30,6 @@ export class ParseDatePipe implements WynkPipeTransform<string, Date> {
 }
 
 /**
- * Parse File Pipe - Validates and transforms file uploads
- * @example
- * @Post('/upload')
- * async uploadFile(@UploadedFile(ParseFilePipe) file: any) {}
- */
-export class ParseFilePipe implements WynkPipeTransform<any, any> {
-  constructor(
-    private options?: {
-      maxSize?: number; // in bytes
-      allowedTypes?: string[];
-      required?: boolean;
-    }
-  ) {}
-
-  transform(value: any, metadata?: ArgumentMetadata): any {
-    if (!value) {
-      if (this.options?.required) {
-        throw new BadRequestException("File is required");
-      }
-      return null;
-    }
-
-    // Check file size
-    if (this.options?.maxSize && value.size > this.options.maxSize) {
-      const maxSizeMB = (this.options.maxSize / (1024 * 1024)).toFixed(2);
-      throw new BadRequestException(`File size exceeds ${maxSizeMB}MB limit`);
-    }
-
-    // Check file type
-    if (
-      this.options?.allowedTypes &&
-      !this.options.allowedTypes.includes(value.type)
-    ) {
-      throw new BadRequestException(
-        `File type must be one of: ${this.options.allowedTypes.join(", ")}`
-      );
-    }
-
-    return value;
-  }
-}
-
-/**
  * Sanitize Pipe - Sanitizes input by removing dangerous characters
  * @example
  * @Post()
