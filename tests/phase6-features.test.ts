@@ -7,10 +7,9 @@ import {
   ValueProvider,
   FactoryProvider,
   ExistingProvider,
-  Provider,
 } from "../core/factory";
-import { Controller, Get, Sse } from "../core/decorators/http.decorators";
-import { injectable, inject } from "tsyringe";
+import { Controller, Sse } from "../core/decorators/http.decorators";
+import { injectable } from "tsyringe";
 import {
   WynkPipeTransform,
   ParseFilePipe,
@@ -43,7 +42,7 @@ describe("ParseFilePipe", () => {
     const pipe = new ParseFilePipe({ fileType: "image/jpeg" });
     const file = { type: "image/png", size: 500 };
     await expect(pipe.transform(file)).rejects.toThrow(
-      'File type "image/png" is not allowed'
+      'File type "image/png" is not allowed',
     );
   });
 
@@ -58,7 +57,7 @@ describe("ParseFilePipe", () => {
     const pipe = new ParseFilePipe({ maxSize: 1_000_000 });
     const file = { type: "application/pdf", size: 2_000_000 };
     await expect(pipe.transform(file)).rejects.toThrow(
-      "exceeds the maximum of 1000000 bytes"
+      "exceeds the maximum of 1000000 bytes",
     );
   });
 
@@ -79,7 +78,7 @@ describe("ParseFilePipe", () => {
       { type: "image/jpeg", size: 200 },
     ];
     await expect(pipe.transform(files)).rejects.toThrow(
-      'File type "image/jpeg" is not allowed'
+      'File type "image/jpeg" is not allowed',
     );
   });
 
@@ -350,10 +349,7 @@ describe("Provider token patterns - mixed", () => {
 
     const app = WynkFactory.create({
       controllers: [],
-      providers: [
-        PlainService,
-        { provide: "LABEL", useValue: "mixed-test" },
-      ],
+      providers: [PlainService, { provide: "LABEL", useValue: "mixed-test" }],
     });
     await app.build();
 

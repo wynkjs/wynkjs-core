@@ -7,12 +7,6 @@ import {
   TooManyRequestsException,
   HttpVersionNotSupportedException,
   HttpException,
-  NotFoundException,
-  BadRequestException,
-  UnauthorizedException,
-  ForbiddenException,
-  ConflictException,
-  InternalServerErrorException,
 } from "../core/decorators/exception.decorators";
 import {
   SetMetadata,
@@ -20,12 +14,7 @@ import {
   applyDecorators,
   createParamDecorator,
 } from "../core/decorators/metadata.decorators";
-import {
-  Module,
-  Global,
-  ModuleMetadata,
-  DynamicModule,
-} from "../core/module";
+import { Module, Global } from "../core/module";
 import {
   OnModuleInit,
   OnModuleDestroy,
@@ -34,7 +23,6 @@ import {
   BeforeApplicationShutdown,
 } from "../core/interfaces/lifecycle.interface";
 import { Optional } from "../core/decorators/di.decorators";
-import { ExecutionContext } from "../core/decorators/guard.decorators";
 import { WynkFactory } from "../core/factory";
 import { Controller, Get, Injectable, UseGuards } from "../core";
 
@@ -127,7 +115,11 @@ describe("SetMetadata", () => {
       @SetMetadata("permissions", ["read", "write"])
       handler() {}
     }
-    const perms = Reflect.getMetadata("permissions", TestClass.prototype, "handler");
+    const perms = Reflect.getMetadata(
+      "permissions",
+      TestClass.prototype,
+      "handler",
+    );
     expect(perms).toEqual(["read", "write"]);
   });
 
@@ -171,7 +163,10 @@ describe("Reflector", () => {
     @SetMetadata("roles", ["user"])
     class ControllerClass {}
 
-    const result = reflector.getAllAndOverride("roles", [HandlerClass, ControllerClass]);
+    const result = reflector.getAllAndOverride("roles", [
+      HandlerClass,
+      ControllerClass,
+    ]);
     expect(result).toEqual(["admin"]);
   });
 
@@ -181,7 +176,10 @@ describe("Reflector", () => {
     @SetMetadata("roles", ["user"])
     class ControllerClass {}
 
-    const result = reflector.getAllAndOverride("roles", [HandlerClass, ControllerClass]);
+    const result = reflector.getAllAndOverride("roles", [
+      HandlerClass,
+      ControllerClass,
+    ]);
     expect(result).toEqual(["user"]);
   });
 
@@ -198,7 +196,10 @@ describe("Reflector", () => {
     @SetMetadata("perms", ["write", "delete"])
     class ControllerClass {}
 
-    const result = reflector.getAllAndMerge("perms", [HandlerClass, ControllerClass]);
+    const result = reflector.getAllAndMerge("perms", [
+      HandlerClass,
+      ControllerClass,
+    ]);
     expect(result).toEqual(["read", "write", "delete"]);
   });
 
@@ -223,8 +224,12 @@ describe("Reflector", () => {
 describe("applyDecorators", () => {
   it("applies multiple class decorators", () => {
     const calls: string[] = [];
-    const dec1: ClassDecorator = (t) => { calls.push("dec1"); };
-    const dec2: ClassDecorator = (t) => { calls.push("dec2"); };
+    const dec1: ClassDecorator = (t) => {
+      calls.push("dec1");
+    };
+    const dec2: ClassDecorator = (t) => {
+      calls.push("dec2");
+    };
 
     @applyDecorators(dec1, dec2)
     class TestClass {}
@@ -242,13 +247,20 @@ describe("applyDecorators", () => {
 
   it("applies multiple method decorators", () => {
     const calls: string[] = [];
-    const dec1: MethodDecorator = (t, k, d) => { calls.push("m1"); return d; };
-    const dec2: MethodDecorator = (t, k, d) => { calls.push("m2"); return d; };
+    const dec1: MethodDecorator = (t, k, d) => {
+      calls.push("m1");
+      return d;
+    };
+    const dec2: MethodDecorator = (t, k, d) => {
+      calls.push("m2");
+      return d;
+    };
 
     class TestClass {
       @applyDecorators(dec1, dec2)
       myMethod() {}
     }
+    new TestClass().myMethod();
 
     expect(calls).toContain("m1");
     expect(calls).toContain("m2");
@@ -271,7 +283,11 @@ describe("createParamDecorator", () => {
       handler(@Token() t: string) {}
     }
 
-    const params = Reflect.getMetadata("params", TestClass.prototype, "handler");
+    const params = Reflect.getMetadata(
+      "params",
+      TestClass.prototype,
+      "handler",
+    );
     expect(params).toBeDefined();
     expect(params.length).toBe(1);
     expect(params[0].type).toBe("custom");
@@ -286,7 +302,11 @@ describe("createParamDecorator", () => {
       handler(@Decorator() v: string) {}
     }
 
-    const params = Reflect.getMetadata("params", TestClass.prototype, "handler");
+    const params = Reflect.getMetadata(
+      "params",
+      TestClass.prototype,
+      "handler",
+    );
     expect(typeof params[0].factory).toBe("function");
   });
 
@@ -297,7 +317,11 @@ describe("createParamDecorator", () => {
       handler(@Field("email") email: string) {}
     }
 
-    const params = Reflect.getMetadata("params", TestClass.prototype, "handler");
+    const params = Reflect.getMetadata(
+      "params",
+      TestClass.prototype,
+      "handler",
+    );
     expect(params[0].data).toBe("email");
   });
 
@@ -309,7 +333,11 @@ describe("createParamDecorator", () => {
       handler(@A() a: string, @B() b: string) {}
     }
 
-    const params = Reflect.getMetadata("params", TestClass.prototype, "handler");
+    const params = Reflect.getMetadata(
+      "params",
+      TestClass.prototype,
+      "handler",
+    );
     expect(params.length).toBe(2);
     expect(params.every((p: any) => p.type === "custom")).toBe(true);
   });
@@ -372,7 +400,11 @@ describe("@Optional decorator", () => {
       myProp: string = "";
     }
 
-    const isOptional = Reflect.getMetadata("optional", TestClass.prototype, "myProp");
+    const isOptional = Reflect.getMetadata(
+      "optional",
+      TestClass.prototype,
+      "myProp",
+    );
     expect(isOptional).toBe(true);
   });
 
@@ -384,7 +416,11 @@ describe("@Optional decorator", () => {
     }
 
     // For constructor params, TypeScript passes the class itself as `target` (not prototype)
-    const optionals = Reflect.getMetadata("optional:params", TestClass, undefined);
+    const optionals = Reflect.getMetadata(
+      "optional:params",
+      TestClass,
+      undefined,
+    );
     expect(optionals).toBeDefined();
     expect(optionals).toContain(0);
   });
@@ -460,7 +496,9 @@ describe("Lifecycle interfaces", () => {
 
 describe("ExecutionContext.getType()", () => {
   it("returns http for standard requests", () => {
-    const { createExecutionContext } = require("../core/decorators/guard.decorators");
+    const {
+      createExecutionContext,
+    } = require("../core/decorators/guard.decorators");
     const mockCtx = { request: {}, response: {}, set: {} };
     const ctx = createExecutionContext(mockCtx, () => {}, class {});
     expect(ctx.getType()).toBe("http");
@@ -473,7 +511,9 @@ describe("WynkFactory with modules support", () => {
     @Controller("/module-test")
     class ModuleController {
       @Get("/")
-      index() { return { ok: true }; }
+      index() {
+        return { ok: true };
+      }
     }
 
     @Module({ controllers: [ModuleController] })
@@ -482,7 +522,9 @@ describe("WynkFactory with modules support", () => {
     const app = WynkFactory.create({ modules: [AppModule] });
     const server = await app.build();
 
-    const res = await server.handle(new Request("http://localhost/module-test/"));
+    const res = await server.handle(
+      new Request("http://localhost/module-test/"),
+    );
     expect(res.status).toBe(200);
   });
 
@@ -491,14 +533,18 @@ describe("WynkFactory with modules support", () => {
     @Controller("/top-level")
     class TopController {
       @Get("/")
-      index() { return { source: "top" }; }
+      index() {
+        return { source: "top" };
+      }
     }
 
     @Injectable()
     @Controller("/from-module")
     class ModuleController {
       @Get("/")
-      index() { return { source: "module" }; }
+      index() {
+        return { source: "module" };
+      }
     }
 
     @Module({ controllers: [ModuleController] })
@@ -511,7 +557,9 @@ describe("WynkFactory with modules support", () => {
     const server = await app.build();
 
     const r1 = await server.handle(new Request("http://localhost/top-level/"));
-    const r2 = await server.handle(new Request("http://localhost/from-module/"));
+    const r2 = await server.handle(
+      new Request("http://localhost/from-module/"),
+    );
     expect(r1.status).toBe(200);
     expect(r2.status).toBe(200);
   });
@@ -521,7 +569,9 @@ describe("WynkFactory with modules support", () => {
     @Controller("/compat")
     class CompatController {
       @Get("/")
-      index() { return { ok: true }; }
+      index() {
+        return { ok: true };
+      }
     }
 
     const app = WynkFactory.create({ controllers: [CompatController] });
@@ -574,7 +624,9 @@ describe("createParamDecorator — runtime injection", () => {
     const app = WynkFactory.create({ controllers: [FastPathController] });
     const server = await app.build();
 
-    const res = await server.handle(new Request("http://localhost/custom-param-fast/"));
+    const res = await server.handle(
+      new Request("http://localhost/custom-param-fast/"),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toHaveProperty("userId");
@@ -597,7 +649,9 @@ describe("createParamDecorator — runtime injection", () => {
     const app = WynkFactory.create({ controllers: [DataArgController] });
     const server = await app.build();
 
-    const res = await server.handle(new Request("http://localhost/custom-param-data/"));
+    const res = await server.handle(
+      new Request("http://localhost/custom-param-data/"),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.val).toBe("value-for-myKey");
@@ -605,7 +659,9 @@ describe("createParamDecorator — runtime injection", () => {
 
   it("injects values from multiple custom decorators in correct order", async () => {
     const First = createParamDecorator((_data: unknown, _ctx: any) => "first");
-    const Second = createParamDecorator((_data: unknown, _ctx: any) => "second");
+    const Second = createParamDecorator(
+      (_data: unknown, _ctx: any) => "second",
+    );
 
     @Injectable()
     @Controller("/custom-param-order")
@@ -619,7 +675,9 @@ describe("createParamDecorator — runtime injection", () => {
     const app = WynkFactory.create({ controllers: [OrderController] });
     const server = await app.build();
 
-    const res = await server.handle(new Request("http://localhost/custom-param-order/"));
+    const res = await server.handle(
+      new Request("http://localhost/custom-param-order/"),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.a).toBe("first");
@@ -627,7 +685,9 @@ describe("createParamDecorator — runtime injection", () => {
   });
 
   it("works in full-featured path (with a guard present)", async () => {
-    const CurrentRole = createParamDecorator((_data: unknown, _ctx: any) => "admin");
+    const CurrentRole = createParamDecorator(
+      (_data: unknown, _ctx: any) => "admin",
+    );
 
     const passThroughGuard = {
       canActivate: (_ctx: any) => true,
@@ -646,7 +706,9 @@ describe("createParamDecorator — runtime injection", () => {
     const app = WynkFactory.create({ controllers: [GuardedController] });
     const server = await app.build();
 
-    const res = await server.handle(new Request("http://localhost/custom-param-guarded/"));
+    const res = await server.handle(
+      new Request("http://localhost/custom-param-guarded/"),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.role).toBe("admin");
