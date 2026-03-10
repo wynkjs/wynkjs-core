@@ -1,5 +1,4 @@
 import { Injectable, Singleton } from "wynkjs";
-import { createHmac, timingSafeEqual } from "node:crypto";
 import type { AuthUser, UserRole } from "./auth.types";
 
 interface StoredUser {
@@ -62,10 +61,10 @@ export class AuthService {
     password: string,
     firstName?: string,
     lastName?: string,
-    username?: string
+    username?: string,
   ) {
     const existing = Array.from(this.users.values()).find(
-      (u) => u.email === email
+      (u) => u.email === email,
     );
     if (existing) {
       throw new Error("User with this email already exists");
@@ -87,9 +86,12 @@ export class AuthService {
     return { id: stored.id, email: stored.email, firstName, lastName };
   }
 
-  async validateUser(email: string, password: string): Promise<AuthUser | null> {
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<AuthUser | null> {
     const stored = Array.from(this.users.values()).find(
-      (u) => u.email === email
+      (u) => u.email === email,
     );
     if (!stored) return null;
     if (!this.comparePassword(password, stored.passwordHash)) return null;
@@ -123,13 +125,14 @@ export class AuthService {
       const parts = token.split(".");
       if (parts.length !== 3) return null;
       const [header, body, sig] = parts;
-      const expected = createHmac("sha256", secret).update(`${header}.${body}`).digest("base64url");
-      const sigBuf = Buffer.from(sig);
-      const expBuf = Buffer.from(expected);
-      if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf)) return null;
+      const hasher = new Bun.CryptoHasher("sha256", secret);
+      hasher.update(`${header}.${body}`);
+      const expected = hasher.digest("base64url");
+      if (sig !== expected) return null;
       const decoded = Buffer.from(body, "base64url").toString("utf-8");
       const payload = JSON.parse(decoded);
-      if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) return null;
+      if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp)
+        return null;
       return payload;
     } catch {
       return null;
@@ -137,15 +140,19 @@ export class AuthService {
   }
 
   createToken(payload: any, secret: string, expiresIn: number = 3600): string {
-    const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+    const header = Buffer.from(
+      JSON.stringify({ alg: "HS256", typ: "JWT" }),
+    ).toString("base64url");
     const body = Buffer.from(
       JSON.stringify({
         ...payload,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + expiresIn,
-      })
+      }),
     ).toString("base64url");
-    const signature = createHmac("sha256", secret).update(`${header}.${body}`).digest("base64url");
+    const hasher = new Bun.CryptoHasher("sha256", secret);
+    hasher.update(`${header}.${body}`);
+    const signature = hasher.digest("base64url");
     return `${header}.${body}.${signature}`;
   }
 }
