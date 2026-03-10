@@ -42,9 +42,11 @@ export enum HttpStatus {
   /** 206 Partial Content */
   PARTIAL_CONTENT = 206,
   /** 207 Multi-Status */
-  AMBIGUOUS = 300,
+  MULTI_STATUS = 207,
 
   // 3xx Redirection
+  /** 300 Multiple Choices */
+  AMBIGUOUS = 300,
   /** 301 Moved Permanently */
   MOVED_PERMANENTLY = 301,
   /** 302 Found */

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, beforeEach } from "bun:test";
 import "reflect-metadata";
 import { container } from "tsyringe";

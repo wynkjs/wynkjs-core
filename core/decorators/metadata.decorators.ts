@@ -97,14 +97,20 @@ export function applyDecorators(
   ...decorators: (ClassDecorator | MethodDecorator | PropertyDecorator)[]
 ): (target: any, key?: any, descriptor?: any) => any {
   return (target: any, key?: any, descriptor?: any) => {
+    let currentTarget = target;
+    let currentDescriptor = descriptor;
     for (const decorator of decorators) {
-      if (key !== undefined && descriptor !== undefined) {
-        (decorator as MethodDecorator)(target, key, descriptor);
+      if (key !== undefined && currentDescriptor !== undefined) {
+        const nextDescriptor = (decorator as MethodDecorator)(currentTarget, key, currentDescriptor);
+        currentDescriptor = (nextDescriptor as PropertyDescriptor | undefined) ?? currentDescriptor;
+      } else if (key !== undefined) {
+        (decorator as PropertyDecorator)(currentTarget, key);
       } else {
-        (decorator as ClassDecorator)(target);
+        const nextTarget = (decorator as ClassDecorator)(currentTarget);
+        currentTarget = (nextTarget as Function | undefined) ?? currentTarget;
       }
     }
-    return descriptor ?? target;
+    return currentDescriptor ?? currentTarget;
   };
 }
 

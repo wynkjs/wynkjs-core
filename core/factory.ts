@@ -97,7 +97,7 @@ export interface ClassProvider {
 
 /** Union of all supported provider definition shapes. */
 export type Provider =
-  | any
+  | (new (...args: any[]) => any)
   | ValueProvider
   | FactoryProvider
   | ExistingProvider
@@ -528,6 +528,9 @@ export class WynkFramework {
             );
             const value = await provider.useFactory(...deps);
             container.register(token, { useValue: value });
+            if (typeof value?.onModuleInit === "function") {
+              await value.onModuleInit();
+            }
           } else if ("useExisting" in provider) {
             // { provide, useExisting } — alias one token to another
             container.register(token, {
@@ -572,6 +575,7 @@ export class WynkFramework {
    * ```
    */
   async build(): Promise<any> {
+    if (this.isBuilt) return this.app;
     // Initialize providers first (database connections, etc.)
     if (this.providers.length > 0) {
       await this.initializeProviders();

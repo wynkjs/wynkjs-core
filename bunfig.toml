@@ -1,3 +1,2 @@
-[bun]
 [bun.alias]
-"wynkjs" = "./dist/index.js"
+wynkjs = "./dist/index.js"

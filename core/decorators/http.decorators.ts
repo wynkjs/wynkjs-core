@@ -280,23 +280,18 @@ export function Redirect(
 }
 
 /**
- * Server-Sent Events (SSE) decorator — registers a GET route that streams
- * events to the client using the `text/event-stream` content type.
- *
- * The handler must return an `AsyncIterable` or an object with `subscribe()`.
- * WynkJS sets `Content-Type: text/event-stream` and marks the route as SSE
- * so the factory can configure the correct response streaming.
+ * Server-Sent Events (SSE) decorator — registers a GET route and marks it as
+ * an SSE endpoint via metadata. Note: the caller is responsible for setting
+ * `Content-Type: text/event-stream` and streaming the response appropriately;
+ * WynkJS does not configure this automatically at this time.
  *
  * @param pathOrOptions Route path string or {@link RouteOptions} object.
  *
  * @example
  * ```typescript
  * @Sse('/events')
- * streamEvents(): AsyncIterable<MessageEvent> {
- *   return new Observable(observer => {
- *     const interval = setInterval(() => observer.next({ data: { time: Date.now() } }), 1000);
- *     return () => clearInterval(interval);
- *   });
+ * streamEvents() {
+ *   // Set Content-Type header and return a streaming response manually
  * }
  * ```
  */

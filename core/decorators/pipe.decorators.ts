@@ -584,7 +584,14 @@ export class ParseFilePipe implements WynkPipeTransform<File | File[], File | Fi
 
     const files: any[] = Array.isArray(value) ? value : [value];
 
+    if (files.length === 0) {
+      throw new Error("Validation failed: No file uploaded");
+    }
+
     for (const file of files) {
+      if (!file || typeof file !== "object" || typeof file.size !== "number" || typeof file.type !== "string") {
+        throw new Error("Validation failed: Uploaded value is not a file");
+      }
       if (this.options.fileType && file.type !== this.options.fileType) {
         throw new Error(
           `Validation failed: File type "${file.type}" is not allowed. Expected "${this.options.fileType}"`

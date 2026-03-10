@@ -176,7 +176,7 @@ export function buildUltraOptimizedHandler(
                 instance[methodName],
                 ControllerClass
               );
-              value = param.factory(param.data, execCtx);
+              value = await param.factory(param.data, execCtx);
             }
             break;
         }
@@ -293,7 +293,7 @@ export function buildUltraOptimizedHandler(
                   instance[methodName],
                   ControllerClass
                 );
-                value = param.factory(param.data, execCtx);
+                value = await param.factory(param.data, execCtx);
               }
               break;
           }

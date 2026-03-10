@@ -92,7 +92,7 @@ export class AuthService {
     );
     if (!stored) return null;
     if (!this.comparePassword(password, stored.passwordHash)) return null;
-    if (!stored.isActive) throw new Error("User account is disabled");
+    if (!stored.isActive) return null;
 
     return {
       id: stored.id,

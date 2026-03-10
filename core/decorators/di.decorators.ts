@@ -18,9 +18,12 @@ export function Optional(): PropertyDecorator & ParameterDecorator {
     parameterIndex?: number
   ) => {
     if (typeof parameterIndex === "number") {
-      const existingOptionals: number[] =
-        Reflect.getMetadata("optional:params", target, propertyKey as any) || [];
-      existingOptionals.push(parameterIndex);
+      const existingOptionals: number[] = [
+        ...(Reflect.getOwnMetadata("optional:params", target, propertyKey as any) ?? []),
+      ];
+      if (!existingOptionals.includes(parameterIndex)) {
+        existingOptionals.push(parameterIndex);
+      }
       Reflect.defineMetadata("optional:params", existingOptionals, target, propertyKey as any);
     } else if (propertyKey !== undefined) {
       Reflect.defineMetadata("optional", true, target, propertyKey);

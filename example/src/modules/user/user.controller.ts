@@ -48,10 +48,10 @@ export class UserController {
   @Post({ path: "/", body: CreateUserDTO })
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() body: CreateUserType) {
-    const existing = await this.userService.findByEmail(body.email!);
+    const existing = await this.userService.findByEmail(body.email);
     if (existing) throw new ConflictException("Email already registered");
     const user = await this.userService.create({
-      email: body.email!,
+      email: body.email,
       firstName: body.name,
       mobile: body.mobile,
     });
@@ -64,7 +64,7 @@ export class UserController {
     @Body() body: UserUpdateType,
     @Query() query: UserQueryType
   ) {
-    const user = await this.userService.update(id, { email: body.email });
+    const user = await this.userService.update(id, { email: body.email, age: body.age });
     if (!user) throw new NotFoundException(`User ${id} not found`);
     return { message: "User updated", user, query };
   }

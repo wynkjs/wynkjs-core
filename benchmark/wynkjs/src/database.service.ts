@@ -11,13 +11,18 @@ export class DatabaseService {
 
   async onModuleInit() {
     try {
-      const isLocal = (process.env.DATABASE_URL || "").includes("localhost") || (process.env.DATABASE_URL || "").includes("sslmode=disable");
+      const databaseUrl = process.env.DATABASE_URL ?? "";
+      let isLocal = false;
+      try {
+        const hostname = new URL(databaseUrl).hostname;
+        isLocal = hostname === "localhost" || hostname === "127.0.0.1";
+      } catch {
+        isLocal = databaseUrl.includes("sslmode=disable");
+      }
+      const allowInsecureSsl = process.env.PGSSL_ALLOW_INSECURE === "true";
       this.pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        // max: 100, // Increased for high concurrency benchmarking
-        // idleTimeoutMillis: 30000,
-        // connectionTimeoutMillis: 10000,
-        ssl: isLocal ? false : { rejectUnauthorized: false },
+        connectionString: databaseUrl,
+        ssl: isLocal ? false : allowInsecureSsl ? { rejectUnauthorized: false } : true,
       });
 
       this.db = drizzle(this.pool, {

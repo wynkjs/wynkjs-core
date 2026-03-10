@@ -7,6 +7,7 @@ export interface User {
   mobile?: string;
   firstName?: string;
   lastName?: string;
+  age?: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -67,6 +68,8 @@ export class UserService {
     lastName?: string;
     mobile?: string;
   }): Promise<User> {
+    const emailTaken = Array.from(this.store.values()).some((u) => u.email === data.email);
+    if (emailTaken) throw new Error("User with this email already exists");
     const id = `user-${this.counter++}`;
     const now = new Date();
     const user: User = {
@@ -92,10 +95,14 @@ export class UserService {
       firstName: string;
       lastName: string;
       mobile: string;
+      age: number;
     }>
   ): Promise<User | undefined> {
     const user = this.store.get(id);
     if (!user) return undefined;
+    if (data.email && Array.from(this.store.values()).some((u) => u.id !== id && u.email === data.email)) {
+      throw new Error("User with this email already exists");
+    }
     const updated: User = { ...user, ...data, updatedAt: new Date() };
     this.store.set(id, updated);
     return updated;
