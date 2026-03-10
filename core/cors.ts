@@ -30,8 +30,8 @@ export function setupCors(
   corsOptions: boolean | CorsOptions
 ): void {
   try {
-    // Try to import @elysiajs/cors
-    const { cors } = require("@elysiajs/cors");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { cors } = require("@elysiajs/cors") as { cors: (config?: Record<string, unknown>) => any };
 
     if (corsOptions === true) {
       // Simple CORS - allow all origins
@@ -93,7 +93,7 @@ export function setupCors(
       app.use(cors(config));
       console.log("✅ CORS enabled with custom configuration");
     }
-  } catch (error) {
+  } catch (_error) {
     console.error("❌ Failed to enable CORS: @elysiajs/cors package not found");
     console.error("   Install it with: bun add @elysiajs/cors");
     console.error(

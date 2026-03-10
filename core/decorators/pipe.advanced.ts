@@ -14,7 +14,7 @@ import { BadRequestException } from "./exception.decorators";
  * async getByDate(@Param('date', ParseDatePipe) date: Date) {}
  */
 export class ParseDatePipe implements WynkPipeTransform<string, Date> {
-  transform(value: string, metadata?: ArgumentMetadata): Date {
+  transform(value: string, _metadata?: ArgumentMetadata): Date {
     if (!value) {
       throw new BadRequestException("Date value is required");
     }
@@ -42,19 +42,19 @@ export class SanitizePipe implements WynkPipeTransform {
     /on\w+\s*=/gi,
   ];
 
-  transform(value: any, metadata?: ArgumentMetadata): any {
+  transform(value: any, _metadata?: ArgumentMetadata): any {
     if (typeof value === "string") {
       return this.sanitizeString(value);
     }
 
     if (Array.isArray(value)) {
-      return value.map((item) => this.transform(item, metadata));
+      return value.map((item) => this.transform(item, _metadata));
     }
 
     if (value && typeof value === "object") {
       const sanitized: any = {};
       for (const key in value) {
-        sanitized[key] = this.transform(value[key], metadata);
+        sanitized[key] = this.transform(value[key], _metadata);
       }
       return sanitized;
     }
@@ -82,7 +82,7 @@ export class SanitizePipe implements WynkPipeTransform {
 export class TransformCasePipe implements WynkPipeTransform<string, string> {
   constructor(private caseType: "lower" | "upper" | "title" = "lower") {}
 
-  transform(value: string, metadata?: ArgumentMetadata): string {
+  transform(value: string, _metadata?: ArgumentMetadata): string {
     if (typeof value !== "string") {
       return value;
     }
@@ -109,14 +109,14 @@ export class TransformCasePipe implements WynkPipeTransform<string, string> {
  * async create(@Body('metadata', ParseJSONPipe) metadata: any) {}
  */
 export class ParseJSONPipe implements WynkPipeTransform<string, any> {
-  transform(value: string, metadata?: ArgumentMetadata): any {
+  transform(value: string, _metadata?: ArgumentMetadata): any {
     if (!value || typeof value !== "string") {
       return value;
     }
 
     try {
       return JSON.parse(value);
-    } catch (error) {
+    } catch (_error) {
       throw new BadRequestException("Invalid JSON format");
     }
   }
@@ -131,7 +131,7 @@ export class ParseJSONPipe implements WynkPipeTransform<string, any> {
 export class ValidateEmailPipe implements WynkPipeTransform<string, string> {
   private emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  transform(value: string, metadata?: ArgumentMetadata): string {
+  transform(value: string, _metadata?: ArgumentMetadata): string {
     if (!value) {
       throw new BadRequestException("Email is required");
     }
@@ -156,7 +156,7 @@ export class ValidateLengthPipe implements WynkPipeTransform {
     private max?: number
   ) {}
 
-  transform(value: any, metadata?: ArgumentMetadata): any {
+  transform(value: any, _metadata?: ArgumentMetadata): any {
     if (!value) {
       return value;
     }
@@ -192,7 +192,7 @@ export class ValidateRangePipe implements WynkPipeTransform<number, number> {
     private max?: number
   ) {}
 
-  transform(value: number, metadata?: ArgumentMetadata): number {
+  transform(value: number, _metadata?: ArgumentMetadata): number {
     const num = typeof value === "string" ? parseFloat(value) : value;
 
     if (isNaN(num)) {
@@ -218,7 +218,7 @@ export class ValidateRangePipe implements WynkPipeTransform<number, number> {
  * async create(@Body('comment', StripHTMLPipe) comment: string) {}
  */
 export class StripHTMLPipe implements WynkPipeTransform<string, string> {
-  transform(value: string, metadata?: ArgumentMetadata): string {
+  transform(value: string, _metadata?: ArgumentMetadata): string {
     if (typeof value !== "string") {
       return value;
     }
@@ -234,7 +234,7 @@ export class StripHTMLPipe implements WynkPipeTransform<string, string> {
  * async create(@Body('title', SlugifyPipe) slug: string) {}
  */
 export class SlugifyPipe implements WynkPipeTransform<string, string> {
-  transform(value: string, metadata?: ArgumentMetadata): string {
+  transform(value: string, _metadata?: ArgumentMetadata): string {
     if (typeof value !== "string") {
       return value;
     }
@@ -259,7 +259,7 @@ export class ParseCommaSeparatedPipe
 {
   constructor(private trim: boolean = true) {}
 
-  transform(value: string, metadata?: ArgumentMetadata): string[] {
+  transform(value: string, _metadata?: ArgumentMetadata): string[] {
     if (!value || typeof value !== "string") {
       return [];
     }

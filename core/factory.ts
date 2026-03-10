@@ -3,20 +3,13 @@ import "reflect-metadata";
 import { container } from "tsyringe";
 import { Value } from "@sinclair/typebox/value";
 import {
-  createExecutionContext,
-  executeGuards,
-} from "./decorators/guard.decorators";
-import { executeInterceptors } from "./decorators/interceptor.decorators";
-import { executePipes, ArgumentMetadata } from "./decorators/pipe.decorators";
-import {
   executeExceptionFilters,
-  HttpException,
 } from "./decorators/exception.decorators";
 import { ParamMetadata } from "./decorators/param.decorators";
 import { ErrorFormatter } from "./decorators/formatter.decorators";
 import { schemaRegistry } from "./schema-registry";
 import { CorsOptions, setupCors } from "./cors";
-import { applyGlobalPrefix, normalizePrefixPath } from "./global-prefix";
+import { normalizePrefixPath } from "./global-prefix";
 import {
   buildUltraOptimizedHandler,
   buildMiddlewareChain,
@@ -242,8 +235,7 @@ export class WynkFramework {
 
               allErrors[field] = [message];
             }
-          } catch (e) {
-            // Fallback to single error if TypeBox iteration fails
+          } catch (_e) {
             const field =
               validationError.valueError?.path?.replace(/^\//, "") ||
               validationError.on ||

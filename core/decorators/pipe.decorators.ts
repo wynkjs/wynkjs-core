@@ -32,7 +32,7 @@ export interface WynkPipeTransform<T = any, R = any> {
    * @param metadata - Context about where the value came from (body, query, param, custom)
    * @returns The transformed value, or a Promise resolving to it
    */
-  transform(value: T, metadata?: ArgumentMetadata): R | Promise<R>;
+  transform(value: T, _metadata?: ArgumentMetadata): R | Promise<R>;
 }
 
 /**
@@ -257,7 +257,7 @@ export class ValidationPipe implements WynkPipeTransform {
  * findOne(@Param('id', ParseIntPipe) id: number) {}
  */
 export class ParseIntPipe implements WynkPipeTransform<string, number> {
-  async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
+  async transform(value: string, _metadata: ArgumentMetadata): Promise<number> {
     const val = parseInt(value, 10);
     if (isNaN(val)) {
       throw new Error(`Validation failed: "${value}" is not an integer`);
@@ -273,7 +273,7 @@ export class ParseIntPipe implements WynkPipeTransform<string, number> {
  * search(@Query('price', ParseFloatPipe) price: number) {}
  */
 export class ParseFloatPipe implements WynkPipeTransform<string, number> {
-  async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
+  async transform(value: string, _metadata: ArgumentMetadata): Promise<number> {
     const val = parseFloat(value);
     if (isNaN(val)) {
       throw new Error(`Validation failed: "${value}" is not a number`);
@@ -289,7 +289,7 @@ export class ParseFloatPipe implements WynkPipeTransform<string, number> {
  * search(@Query('active', ParseBoolPipe) active: boolean) {}
  */
 export class ParseBoolPipe implements WynkPipeTransform<string, boolean> {
-  async transform(value: string, metadata: ArgumentMetadata): Promise<boolean> {
+  async transform(value: string, _metadata: ArgumentMetadata): Promise<boolean> {
     if (value === "true" || value === "1") return true;
     if (value === "false" || value === "0") return false;
     throw new Error(`Validation failed: "${value}" is not a boolean`);
@@ -311,7 +311,7 @@ export class ParseArrayPipe implements WynkPipeTransform<string, string[]> {
 
   async transform(
     value: string,
-    metadata: ArgumentMetadata
+    _metadata: ArgumentMetadata
   ): Promise<string[]> {
     if (Array.isArray(value)) return value;
     if (typeof value === "string") {
@@ -328,7 +328,7 @@ export class ParseArrayPipe implements WynkPipeTransform<string, string[]> {
  * findOne(@Param('id', ParseUUIDPipe) id: string) {}
  */
 export class ParseUUIDPipe implements WynkPipeTransform<string, string> {
-  async transform(value: string, metadata: ArgumentMetadata): Promise<string> {
+  async transform(value: string, _metadata: ArgumentMetadata): Promise<string> {
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -350,7 +350,7 @@ export class ParseUUIDPipe implements WynkPipeTransform<string, string> {
 export class ParseEnumPipe<T = any> implements WynkPipeTransform<string, T> {
   constructor(private enumType: any) {}
 
-  async transform(value: string, metadata: ArgumentMetadata): Promise<T> {
+  async transform(value: string, _metadata: ArgumentMetadata): Promise<T> {
     const enumValues = Object.values(this.enumType);
 
     if (!enumValues.includes(value)) {
@@ -374,7 +374,7 @@ export class ParseEnumPipe<T = any> implements WynkPipeTransform<string, T> {
 export class DefaultValuePipe<T = any> implements WynkPipeTransform<T, T> {
   constructor(private defaultValue: T) {}
 
-  async transform(value: T, metadata: ArgumentMetadata): Promise<T> {
+  async transform(value: T, _metadata: ArgumentMetadata): Promise<T> {
     if (value === undefined || value === null) {
       return this.defaultValue;
     }
@@ -389,7 +389,7 @@ export class DefaultValuePipe<T = any> implements WynkPipeTransform<T, T> {
  * create(@Body('name', TrimPipe) name: string) {}
  */
 export class TrimPipe implements WynkPipeTransform<string, string> {
-  async transform(value: string, metadata: ArgumentMetadata): Promise<string> {
+  async transform(value: string, _metadata: ArgumentMetadata): Promise<string> {
     if (typeof value !== "string") {
       return value;
     }

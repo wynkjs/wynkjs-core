@@ -201,7 +201,7 @@ export function buildUltraOptimizedHandler(
         args[param.index] = value;
       }
 
-      return await instance[methodName].apply(instance, args);
+      return await instance[methodName](...args);
     };
   }
 
@@ -317,7 +317,7 @@ export function buildUltraOptimizedHandler(
           args[param.index] = value;
         }
 
-        return await instance[methodName].apply(instance, args);
+        return await instance[methodName](...args);
       };
 
       // Interceptors

@@ -202,6 +202,7 @@ export class Request {
   delete(key: string): boolean {
     const deleted = this.customData.delete(key);
     if (this.ctx.customData && key in this.ctx.customData) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete this.ctx.customData[key];
     }
     return deleted;

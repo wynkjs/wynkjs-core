@@ -47,6 +47,8 @@
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
+    "lint": "bunx eslint .",
+    "lint:fix": "bunx eslint . --fix",
     "test": "bun test",
     "test:all": "bun test tests/",
     "test:core": "bash tests/test-core.sh",
@@ -60,8 +62,13 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
     "elysia": "^1.0.0",
-    "typescript": "^5.0.0"
+    "eslint": "^10.0.3",
+    "jiti": "^2.6.1",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.57.0"
   },
   "engines": {
     "bun": ">=1.0.0"

@@ -135,7 +135,7 @@ export function createParamDecorator<TData = unknown>(
 ): (data?: TData) => ParameterDecorator {
   return (data?: TData): ParameterDecorator => {
     return (
-      target: Object,
+      target: object,
       propertyKey: string | symbol | undefined,
       parameterIndex: number
     ) => {

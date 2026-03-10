@@ -56,7 +56,7 @@ export interface ParamMetadata {
  */
 function createParamDecorator(type: ParamType, data?: string, pipes?: any[]) {
   return (
-    target: Object,
+    target: object,
     propertyKey: string | symbol | undefined,
     parameterIndex: number
   ) => {
@@ -218,7 +218,7 @@ export function UploadedFiles(): ParameterDecorator {
  */
 export function Ip(): ParameterDecorator {
   return (
-    target: Object,
+    target: object,
     propertyKey: string | symbol | undefined,
     parameterIndex: number
   ) => {
@@ -249,7 +249,7 @@ export function Ip(): ParameterDecorator {
  */
 export function Session(property?: string): ParameterDecorator {
   return (
-    target: Object,
+    target: object,
     propertyKey: string | symbol | undefined,
     parameterIndex: number
   ) => {
@@ -280,7 +280,7 @@ export function Session(property?: string): ParameterDecorator {
  */
 export function HostParam(property: string): ParameterDecorator {
   return (
-    target: Object,
+    target: object,
     propertyKey: string | symbol | undefined,
     parameterIndex: number
   ) => {

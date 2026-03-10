@@ -313,7 +313,7 @@ export class HttpWynkExceptionFilter
   implements WynkExceptionFilter<HttpException>
 {
   catch(exception: HttpException, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
     const status = exception.getStatus();
 
     return {
@@ -330,7 +330,7 @@ export class HttpWynkExceptionFilter
 @Catch()
 export class AllExceptions implements WynkExceptionFilter {
   catch(exception: any, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
@@ -372,7 +372,7 @@ export class AuthenticationException
   implements WynkExceptionFilter<UnauthorizedException>
 {
   catch(exception: UnauthorizedException, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
     const request = context.getRequest();
 
     return {
@@ -407,7 +407,7 @@ export class AuthorizationException
   implements WynkExceptionFilter<ForbiddenException>
 {
   catch(exception: ForbiddenException, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
     const request = context.getRequest();
 
     return {
@@ -432,7 +432,7 @@ export class AuthorizationException
  */
 export class RateLimitException implements WynkExceptionFilter {
   catch(exception: any, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
     const request = context.getRequest();
 
     // Don't catch HttpException or its subclasses
@@ -461,7 +461,7 @@ export class RateLimitException implements WynkExceptionFilter {
  */
 export class BusinessLogicException implements WynkExceptionFilter {
   catch(exception: any, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
     const request = context.getRequest();
 
     // Don't catch HttpException or its subclasses

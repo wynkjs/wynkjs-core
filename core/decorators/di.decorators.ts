@@ -13,7 +13,7 @@ import "reflect-metadata";
  */
 export function Optional(): PropertyDecorator & ParameterDecorator {
   return (
-    target: Object,
+    target: object,
     propertyKey: string | symbol | undefined,
     parameterIndex?: number
   ) => {

@@ -9,7 +9,7 @@ import type { CorsOptions } from "wynkjs";
 
 describe("CORS Configuration Tests", () => {
   let app: any;
-  let serverUrl = "http://localhost:3333";
+  const serverUrl = "http://localhost:3333";
 
   afterAll(async () => {
     if (app?.stop) {

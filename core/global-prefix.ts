@@ -139,13 +139,13 @@ export function wrapWithPrefix(
   prefix: string | GlobalPrefixOptions
 ): any {
   let prefixStr: string;
-  let excludedRoutes: string[] = [];
+  let _excludedRoutes: string[] = [];
 
   if (typeof prefix === "string") {
     prefixStr = prefix;
   } else {
     prefixStr = prefix.prefix;
-    excludedRoutes = prefix.exclude || [];
+    _excludedRoutes = prefix.exclude || [];
   }
 
   prefixStr = normalizePrefixPath(prefixStr);
