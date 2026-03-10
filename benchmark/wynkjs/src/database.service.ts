@@ -12,17 +12,34 @@ export class DatabaseService {
   async onModuleInit() {
     try {
       const databaseUrl = process.env.DATABASE_URL ?? "";
-      let isLocal = false;
+      let ssl: boolean | { rejectUnauthorized: boolean };
       try {
-        const hostname = new URL(databaseUrl).hostname;
-        isLocal = hostname === "localhost" || hostname === "127.0.0.1";
+        const parsed = new URL(databaseUrl);
+        const sslmode = parsed.searchParams.get("sslmode");
+        const allowInsecureSsl = process.env.PGSSL_ALLOW_INSECURE === "true";
+        if (sslmode === "disable") {
+          ssl = false;
+        } else if (
+          sslmode === "require" ||
+          sslmode === "verify-ca" ||
+          sslmode === "verify-full"
+        ) {
+          ssl = allowInsecureSsl ? { rejectUnauthorized: false } : true;
+        } else {
+          const hostname = parsed.hostname;
+          const isLocal = hostname === "localhost" || hostname === "127.0.0.1";
+          ssl = isLocal
+            ? false
+            : allowInsecureSsl
+              ? { rejectUnauthorized: false }
+              : true;
+        }
       } catch {
-        isLocal = databaseUrl.includes("sslmode=disable");
+        ssl = false;
       }
-      const allowInsecureSsl = process.env.PGSSL_ALLOW_INSECURE === "true";
       this.pool = new Pool({
         connectionString: databaseUrl,
-        ssl: isLocal ? false : allowInsecureSsl ? { rejectUnauthorized: false } : true,
+        ssl,
       });
 
       this.db = drizzle(this.pool, {

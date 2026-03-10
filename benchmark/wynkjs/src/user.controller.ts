@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Body, Param, Injectable, Query } from "wynkjs";
 import { DatabaseService } from "./database.service";
 import { CreateUserDTO, UserIdDTO } from "./user.dto";
-import type { CreateUserType, UserIdType } from "./user.dto";
+import type { CreateUserType } from "./user.dto";
 import { userTable } from "./schema";
-import { eq } from "drizzle-orm";
+import { eq, count, asc } from "drizzle-orm";
 
 @Injectable()
 @Controller("/users")
@@ -14,7 +14,7 @@ export class UserController {
   async findAll(
     @Query("page") page?: string,
     @Query("limit") limit?: string,
-    @Query("fields") fields?: string
+    @Query("fields") fields?: string,
   ) {
     const db = this.dbService.getDb();
 
@@ -52,17 +52,24 @@ export class UserController {
     const rows = await db
       .select(selectFields)
       .from(userTable)
+      .orderBy(asc(userTable.id))
       .limit(limitNum + 1)
       .offset(offset);
 
+    const [{ value: total }] = await db
+      .select({ value: count() })
+      .from(userTable);
     const hasNext = rows.length > limitNum;
     const users = hasNext ? rows.slice(0, limitNum) : rows;
+    const totalPages = Math.ceil(total / limitNum);
 
     return {
       users,
       pagination: {
         page: pageNum,
         limit: limitNum,
+        total,
+        totalPages,
         hasNext,
         hasPrev: pageNum > 1,
       },
@@ -95,7 +102,7 @@ export class UserController {
       {
         algorithm: "bcrypt",
         cost: 4, // Reduced for benchmarking (was 10)
-      }
+      },
     );
 
     const result = await db

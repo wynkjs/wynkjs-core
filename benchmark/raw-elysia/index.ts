@@ -58,7 +58,19 @@ const app = new Elysia()
   }))
   .get("/users", async ({ set }) => {
     try {
-      const allUsers = await db.select().from(userTable).limit(100);
+      const allUsers = await db
+        .select({
+          id: userTable.id,
+          email: userTable.email,
+          username: userTable.username,
+          firstName: userTable.firstName,
+          lastName: userTable.lastName,
+          isActive: userTable.isActive,
+          createdAt: userTable.createdAt,
+          updatedAt: userTable.updatedAt,
+        })
+        .from(userTable)
+        .limit(100);
       return allUsers;
     } catch (error: any) {
       console.error("Error fetching users:", error);
@@ -69,7 +81,16 @@ const app = new Elysia()
   .get("/users/:id", async ({ params, set }) => {
     try {
       const user = await db
-        .select()
+        .select({
+          id: userTable.id,
+          email: userTable.email,
+          username: userTable.username,
+          firstName: userTable.firstName,
+          lastName: userTable.lastName,
+          isActive: userTable.isActive,
+          createdAt: userTable.createdAt,
+          updatedAt: userTable.updatedAt,
+        })
         .from(userTable)
         .where(eq(userTable.id, params.id));
 
@@ -87,15 +108,20 @@ const app = new Elysia()
   })
   .post("/users", async ({ body, set }: any) => {
     try {
+      if (!body.email) {
+        set.status = 400;
+        return { error: "Email is required" };
+      }
+
       if (!body.password) {
         set.status = 400;
         return { error: "Password is required" };
       }
 
-      const hashedPassword = await Bun.password.hash(
-        body.password,
-        { algorithm: "bcrypt", cost: 4 }
-      );
+      const hashedPassword = await Bun.password.hash(body.password, {
+        algorithm: "bcrypt",
+        cost: 4,
+      });
 
       const newUser = await db
         .insert(userTable)
