@@ -16,41 +16,49 @@ interface StoredUser {
 @Singleton()
 export class AuthService {
   private users: Map<string, StoredUser> = new Map();
+  private usersByEmail: Map<string, string> = new Map();
   private counter = 1;
+  private readonly ready: Promise<void>;
 
   constructor() {
-    void this.seedUsers();
+    this.ready = this.seedUsers();
   }
 
   private async seedUsers() {
     const adminId = "auth-user-1";
+    const adminHash = await Bun.password.hash("password123", {
+      algorithm: "bcrypt",
+      cost: 10,
+    });
     this.users.set(adminId, {
       id: adminId,
       email: "admin@example.com",
-      passwordHash: await Bun.password.hash("password123", {
-        algorithm: "bcrypt",
-        cost: 10,
-      }),
+      passwordHash: adminHash,
       firstName: "Admin",
       lastName: "User",
       username: "admin",
       roles: ["admin", "user"],
       isActive: true,
     });
+    this.usersByEmail.set("admin@example.com", adminId);
+
     const userId = "auth-user-2";
+    const userHash = await Bun.password.hash("password123", {
+      algorithm: "bcrypt",
+      cost: 10,
+    });
     this.users.set(userId, {
       id: userId,
       email: "user@example.com",
-      passwordHash: await Bun.password.hash("password123", {
-        algorithm: "bcrypt",
-        cost: 10,
-      }),
+      passwordHash: userHash,
       firstName: "Regular",
       lastName: "User",
       username: "regularuser",
       roles: ["user"],
       isActive: true,
     });
+    this.usersByEmail.set("user@example.com", userId);
+
     this.counter = 3;
   }
 
@@ -72,24 +80,33 @@ export class AuthService {
     lastName?: string,
     username?: string,
   ) {
-    const existing = Array.from(this.users.values()).find(
-      (u) => u.email === email,
-    );
-    if (existing) {
+    await this.ready;
+
+    if (this.usersByEmail.has(email)) {
       throw new Error("User with this email already exists");
     }
 
     const id = `auth-user-${this.counter++}`;
-    const stored: StoredUser = {
-      id,
-      email,
-      passwordHash: await this.hashPassword(password),
-      firstName,
-      lastName,
-      username: username || email.split("@")[0],
-      roles: ["user"],
-      isActive: true,
-    };
+    this.usersByEmail.set(email, id);
+
+    let stored: StoredUser;
+    try {
+      stored = {
+        id,
+        email,
+        passwordHash: await this.hashPassword(password),
+        firstName,
+        lastName,
+        username: username || email.split("@")[0],
+        roles: ["user"],
+        isActive: true,
+      };
+    } catch (err) {
+      this.usersByEmail.delete(email);
+      this.counter--;
+      throw err;
+    }
+
     this.users.set(id, stored);
 
     return { id: stored.id, email: stored.email, firstName, lastName };
@@ -99,6 +116,7 @@ export class AuthService {
     email: string,
     password: string,
   ): Promise<AuthUser | null> {
+    await this.ready;
     const stored = Array.from(this.users.values()).find(
       (u) => u.email === email,
     );
@@ -118,6 +136,7 @@ export class AuthService {
   }
 
   async getUserWithRoles(userId: string): Promise<AuthUser | null> {
+    await this.ready;
     const stored = this.users.get(userId);
     if (!stored) return null;
     return {
