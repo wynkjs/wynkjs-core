@@ -27,8 +27,7 @@ jobs:
 
       - name: Run tests with coverage and produce JUnit
         run: |
-          # Run tests with coverage and emit JUnit XML to test-results.xml
-          bun test tests/ --coverage --reporter=junit > test-results.xml
+          bun test tests/ --coverage --reporter=junit --reporter-outfile=test-results.xml
 
       - name: Upload test results
         if: always()
