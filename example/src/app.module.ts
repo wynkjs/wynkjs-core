@@ -6,6 +6,8 @@ import { ProtectedModule } from "./modules/protected/protected.module";
 import { SessionModule } from "./modules/session/session.module";
 import { DemoModule } from "./modules/demo/demo.module";
 import { HealthModule } from "./modules/health/health.module";
+import { FiltersModule } from "./modules/filters/filters.module";
+import { ProvidersModule } from "./modules/providers/providers.module";
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { HealthModule } from "./modules/health/health.module";
     SessionModule,
     DemoModule,
     HealthModule,
+    FiltersModule,
+    ProvidersModule,
   ],
 })
 export class AppModule {}

@@ -19,15 +19,18 @@ export class AuthService {
   private counter = 1;
 
   constructor() {
-    this.seedUsers();
+    void this.seedUsers();
   }
 
-  private seedUsers() {
+  private async seedUsers() {
     const adminId = "auth-user-1";
     this.users.set(adminId, {
       id: adminId,
       email: "admin@example.com",
-      passwordHash: Buffer.from("password123").toString("base64"),
+      passwordHash: await Bun.password.hash("password123", {
+        algorithm: "bcrypt",
+        cost: 10,
+      }),
       firstName: "Admin",
       lastName: "User",
       username: "admin",
@@ -38,7 +41,10 @@ export class AuthService {
     this.users.set(userId, {
       id: userId,
       email: "user@example.com",
-      passwordHash: Buffer.from("password123").toString("base64"),
+      passwordHash: await Bun.password.hash("password123", {
+        algorithm: "bcrypt",
+        cost: 10,
+      }),
       firstName: "Regular",
       lastName: "User",
       username: "regularuser",
@@ -48,12 +54,15 @@ export class AuthService {
     this.counter = 3;
   }
 
-  private hashPassword(password: string): string {
-    return Buffer.from(password).toString("base64");
+  private async hashPassword(password: string): Promise<string> {
+    return Bun.password.hash(password, { algorithm: "bcrypt", cost: 10 });
   }
 
-  private comparePassword(plain: string, hashed: string): boolean {
-    return Buffer.from(plain).toString("base64") === hashed;
+  private async comparePassword(
+    plain: string,
+    hashed: string,
+  ): Promise<boolean> {
+    return Bun.password.verify(plain, hashed);
   }
 
   async registerUser(
@@ -74,7 +83,7 @@ export class AuthService {
     const stored: StoredUser = {
       id,
       email,
-      passwordHash: this.hashPassword(password),
+      passwordHash: await this.hashPassword(password),
       firstName,
       lastName,
       username: username || email.split("@")[0],
@@ -94,7 +103,8 @@ export class AuthService {
       (u) => u.email === email,
     );
     if (!stored) return null;
-    if (!this.comparePassword(password, stored.passwordHash)) return null;
+    if (!(await this.comparePassword(password, stored.passwordHash)))
+      return null;
     if (!stored.isActive) return null;
 
     return {

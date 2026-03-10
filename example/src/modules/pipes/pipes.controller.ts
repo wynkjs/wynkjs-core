@@ -74,7 +74,8 @@ export class PipesController {
     return {
       items,
       count: Array.isArray(items) ? items.length : 0,
-      feature: "ParseArrayPipe — parses comma-separated query param into array. Try ?items=a,b,c",
+      feature:
+        "ParseArrayPipe — parses comma-separated query param into array. Try ?items=a,b,c",
     };
   }
 
@@ -82,7 +83,8 @@ export class PipesController {
   parseUUID(@Param("id", ParseUUIDPipe) id: string) {
     return {
       id,
-      feature: "ParseUUIDPipe — validates UUID format. Try a valid UUID like 550e8400-e29b-41d4-a716-446655440000",
+      feature:
+        "ParseUUIDPipe — validates UUID format. Try a valid UUID like 550e8400-e29b-41d4-a716-446655440000",
     };
   }
 
@@ -91,19 +93,21 @@ export class PipesController {
     return {
       color,
       validValues: Object.values(Color),
-      feature: "ParseEnumPipe — validates value is in enum. Try: red, green, blue",
+      feature:
+        "ParseEnumPipe — validates value is in enum. Try: red, green, blue",
     };
   }
 
   @Get("/default-value")
   defaultValue(
     @Query("page", new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number
+    @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number,
   ) {
     return {
       page,
       limit,
-      feature: "DefaultValuePipe — returns default when query param is absent. Try without ?page or ?limit",
+      feature:
+        "DefaultValuePipe — returns default when query param is absent. Try without ?page or ?limit",
     };
   }
 
@@ -116,7 +120,7 @@ export class PipesController {
     };
   }
 
-  @Post("/validate")
+  @Post({ path: "/validate", body: EchoBodyDTO })
   @UsePipes(new ValidationPipe({ whitelist: true }))
   validate(@Body() body: { message: string }) {
     return {
@@ -130,7 +134,8 @@ export class PipesController {
     return {
       date,
       iso: date instanceof Date ? date.toISOString() : date,
-      feature: "ParseDatePipe — parses date string into Date object. Try: 2025-01-15",
+      feature:
+        "ParseDatePipe — parses date string into Date object. Try: 2025-01-15",
     };
   }
 
@@ -156,7 +161,8 @@ export class PipesController {
   parseJSON(@Query("data", ParseJSONPipe) data: any) {
     return {
       data,
-      feature: "ParseJSONPipe — parses JSON string from query param. Try: ?data={\"key\":\"value\"}",
+      feature:
+        'ParseJSONPipe — parses JSON string from query param. Try: ?data={"key":"value"}',
     };
   }
 
@@ -164,13 +170,14 @@ export class PipesController {
   validateEmail(@Param("email", ValidateEmailPipe) email: string) {
     return {
       email,
-      feature: "ValidateEmailPipe — validates email format. Try: user@example.com",
+      feature:
+        "ValidateEmailPipe — validates email format. Try: user@example.com",
     };
   }
 
   @Get("/validate-length/:text")
   validateLength(
-    @Param("text", new ValidateLengthPipe({ min: 3, max: 50 })) text: string
+    @Param("text", new ValidateLengthPipe({ min: 3, max: 50 })) text: string,
   ) {
     return {
       text,
@@ -181,11 +188,13 @@ export class PipesController {
 
   @Get("/validate-range/:num")
   validateRange(
-    @Param("num", ParseIntPipe, new ValidateRangePipe({ min: 1, max: 100 })) num: number
+    @Param("num", ParseIntPipe, new ValidateRangePipe({ min: 1, max: 100 }))
+    num: number,
   ) {
     return {
       num,
-      feature: "ValidateRangePipe(min:1, max:100) — validates numeric range. Try values 1-100",
+      feature:
+        "ValidateRangePipe(min:1, max:100) — validates numeric range. Try values 1-100",
     };
   }
 
@@ -203,28 +212,30 @@ export class PipesController {
   slugify(@Param("text") text: string) {
     return {
       text,
-      feature: "SlugifyPipe — converts text to URL-friendly slug. Try 'Hello World'",
+      feature:
+        "SlugifyPipe — converts text to URL-friendly slug. Try 'Hello World'",
     };
   }
 
   @Get("/comma-separated")
-  commaSeparated(
-    @Query("tags", ParseCommaSeparatedPipe) tags: string[]
-  ) {
+  commaSeparated(@Query("tags", ParseCommaSeparatedPipe) tags: string[]) {
     return {
       tags,
       count: Array.isArray(tags) ? tags.length : 0,
-      feature: "ParseCommaSeparatedPipe — splits comma-separated string. Try: ?tags=js,ts,bun",
+      feature:
+        "ParseCommaSeparatedPipe — splits comma-separated string. Try: ?tags=js,ts,bun",
     };
   }
 
   @Get("/combined/:text")
   combined(
-    @Param("text", TrimPipe, new TransformCasePipe("lower"), SlugifyPipe) text: string
+    @Param("text", TrimPipe, new TransformCasePipe("lower"), SlugifyPipe)
+    text: string,
   ) {
     return {
       text,
-      feature: "Chained pipes on one param: TrimPipe → TransformCasePipe('lower') → SlugifyPipe",
+      feature:
+        "Chained pipes on one param: TrimPipe → TransformCasePipe('lower') → SlugifyPipe",
     };
   }
 }
