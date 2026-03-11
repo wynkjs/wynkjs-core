@@ -3,12 +3,6 @@
  * Provides utilities for starting/stopping the WynkJS app for E2E testing
  */
 
-import { config } from "dotenv";
-import { join } from "path";
-
-// Load environment variables from example/.env
-config({ path: join(__dirname, "../../.env") });
-
 import { WynkFactory, DetailedErrorFormatter } from "wynkjs";
 import { UserController } from "../../src/modules/user/user.controller";
 import { EmailService } from "../../src/modules/email/email.service";
@@ -30,7 +24,7 @@ let currentServer: any = null;
  */
 export async function startTestApp(
   controllersOrPort: any[] | number = 3001,
-  portParam?: number
+  portParam?: number,
 ): Promise<TestApp> {
   // Stop existing app if running
   if (currentServer) {
@@ -104,7 +98,7 @@ export async function stopTestApp(): Promise<void> {
  */
 export async function request(
   url: string,
-  options?: RequestInit
+  options?: RequestInit,
 ): Promise<Response> {
   return fetch(url, options);
 }
@@ -122,7 +116,7 @@ export async function parseJson<T = any>(response: Response): Promise<T> {
 export function expectStatus(response: Response, status: number): void {
   if (response.status !== status) {
     throw new Error(
-      `Expected status ${status} but got ${response.status}: ${response.statusText}`
+      `Expected status ${status} but got ${response.status}: ${response.statusText}`,
     );
   }
 }

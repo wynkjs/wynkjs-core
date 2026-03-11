@@ -1,182 +1,127 @@
 import { describe, it, expect, beforeEach } from "bun:test";
-import { Test, MockFactory } from "wynkjs";
+import { Test } from "wynkjs";
 import { UserController } from "./user.controller";
-import { EmailService } from "../email/email.service";
+import { UserService } from "./user.service";
 
 describe("UserController", () => {
   let controller: UserController;
-  let emailService: EmailService;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       controllers: [UserController],
-      providers: [EmailService],
+      providers: [UserService],
     }).compile();
 
     controller = module.get<UserController>(UserController);
-    emailService = module.get<EmailService>(EmailService);
   });
 
   describe("list", () => {
-    it("should return an array of users", async () => {
-      const result = await controller.list();
+    it("should return an array of users with query", async () => {
+      const query: import("./user.dto").UserQueryType = {
+        includePosts: true,
+        includeComments: false,
+      };
+      const result = await controller.list(query);
 
       expect(result).toBeDefined();
       expect(result.users).toBeArray();
-      expect(result.users).toHaveLength(3);
-      expect(result.users).toContain("Alice");
-      expect(result.users).toContain("Bob");
-      expect(result.users).toContain("Charlie");
-    });
-  });
-
-  describe("create", () => {
-    it("should create a user with all params", async () => {
-      const createDto = {
-        name: "John Doe",
-        email: "john@example.com",
-        age: 25,
-      };
-
-      // Mock email service to avoid random failures
-      emailService.sendWelcomeEmail = async () => {};
-
-      const result = await controller.create(
-        createDto,
-        "id1-value",
-        "id2-value",
-        { includePosts: true, includeComments: false }
-      );
-
-      expect(result.message).toBe("User created");
-      expect(result.data).toEqual(createDto);
-      expect(result.params).toEqual({ id1: "id1-value", id2: "id2-value" });
-      expect(result.query.includePosts).toBe(true);
-    });
-
-    it("should handle user creation without optional fields", async () => {
-      const createDto = {
-        email: "simple@example.com",
-      };
-
-      // Mock email service
-      emailService.sendWelcomeEmail = async () => {};
-
-      const result = await controller.create(createDto, "id1", "id2", {
-        includePosts: false,
-      });
-
-      expect(result.message).toBe("User created");
-      expect(result.data.email).toBe(createDto.email);
-    });
-
-    it("should not send email when name is missing", async () => {
-      const sendEmailSpy = MockFactory.createSpy();
-      emailService.sendWelcomeEmail = sendEmailSpy;
-
-      const createDto = {
-        email: "test@example.com",
-      };
-
-      await controller.create(createDto, "id1", "id2", { includePosts: false });
-
-      expect(sendEmailSpy.calls).toHaveLength(0);
+      expect(result.users.length).toBeGreaterThanOrEqual(2);
+      expect(result.users[0]).toHaveProperty("email");
+      expect(result.query).toEqual(query);
     });
   });
 
   describe("findOne", () => {
     it("should return a user by id", async () => {
-      const result = await controller.findOne("123", {
-        includePosts: true,
-        includeComments: false,
-      });
+      const result = await controller.findOne("user-1");
 
       expect(result).toBeDefined();
       expect(result.user).toBeDefined();
-      expect(result.user.id).toBe("123");
-      expect(result.user.name).toBe("Alice");
-      expect(result.query.includePosts).toBe(true);
+      expect(result.user.id).toBe("user-1");
+      expect(result.user.email).toBe("alice@example.com");
     });
 
-    it("should include query parameters in response", async () => {
-      const query = {
-        includePosts: false,
-        includeComments: true,
-      };
-
-      const result = await controller.findOne("456", query);
-
-      expect(result.query).toEqual(query);
+    it("should throw NotFoundException for unknown id", async () => {
+      await expect(controller.findOne("does-not-exist")).rejects.toThrow();
     });
   });
 
-  describe("getAll", () => {
-    it("should return all users", async () => {
-      const result = await controller.getAll();
+  describe("create", () => {
+    it("should create a user and return message", async () => {
+      const body = {
+        email: "newuser@example.com",
+        name: "New User",
+        mobile: "1234567890",
+      };
 
-      expect(result).toBeDefined();
+      const result = await controller.create(body as any);
+
+      expect(result.message).toBe("User created");
       expect(result.user).toBeDefined();
-      expect(result.user.name).toBe("All");
+      expect(result.user.email).toBe(body.email);
+    });
+
+    it("should throw ConflictException for duplicate email", async () => {
+      const body = { email: "alice@example.com", name: "Alice Again" };
+      await expect(controller.create(body as any)).rejects.toThrow();
     });
   });
 
   describe("update", () => {
-    it("should update a user", async () => {
-      const updateDto = {
-        email: "updated@example.com",
-        age: 30,
-      };
+    it("should update a user and return updated data", async () => {
+      const body = { email: "updated@example.com" };
+      const query = {};
 
-      const result = await controller.update("123", updateDto, {
-        includePosts: false,
-      });
+      const result = await controller.update(
+        "user-1",
+        body as any,
+        query as any,
+      );
 
       expect(result.message).toBe("User updated");
-      expect(result.id).toBe("123");
-      expect(result.data).toEqual(updateDto);
+      expect(result.user).toBeDefined();
+      expect(result.user.email).toBe("updated@example.com");
     });
 
-    it("should throw NotFoundException when id is 'params'", async () => {
-      const updateDto = {
-        email: "test@example.com",
-      };
-
+    it("should throw NotFoundException for unknown id", async () => {
       await expect(
-        controller.update("params", updateDto, { includePosts: false })
+        controller.update("ghost", { email: "x@x.com" } as any, {} as any),
       ).rejects.toThrow();
     });
   });
 
-  describe("sendPasswordReset", () => {
-    it("should send password reset email", async () => {
-      // Mock email service to avoid random failures
-      emailService.sendPasswordResetEmail = async () => {};
-
+  describe("replace", () => {
+    it("should replace a user and return replaced data", async () => {
       const body = {
-        email: "user@example.com",
-        userId: "user-123",
+        email: "replaced@example.com",
+        name: "Replaced User",
+        mobile: "9999999999",
       };
 
-      const result = await controller.sendPasswordReset(body);
+      const result = await controller.replace("user-2", body as any);
 
-      expect(result.message).toBe("Password reset email sent");
-      expect(result.email).toBe(body.email);
-      expect(result.userId).toBe(body.userId);
+      expect(result.message).toBe("User replaced");
+      expect(result.user).toBeDefined();
+      expect(result.user.email).toBe("replaced@example.com");
     });
 
-    it("should handle password reset with different user ids", async () => {
-      // Mock email service
-      emailService.sendPasswordResetEmail = async () => {};
+    it("should throw NotFoundException for unknown id", async () => {
+      await expect(
+        controller.replace("ghost", { email: "x@x.com", name: "X" } as any),
+      ).rejects.toThrow();
+    });
+  });
 
-      const body = {
-        email: "test@example.com",
-        userId: "user-456",
-      };
+  describe("remove", () => {
+    it("should delete a user and return confirmation", async () => {
+      const result = await controller.remove("user-1");
 
-      const result = await controller.sendPasswordReset(body);
+      expect(result.message).toBe("User deleted");
+      expect(result.id).toBe("user-1");
+    });
 
-      expect(result.message).toBe("Password reset email sent");
-      expect(result.userId).toBe(body.userId);
+    it("should throw NotFoundException for unknown id", async () => {
+      await expect(controller.remove("ghost")).rejects.toThrow();
     });
   });
 });
