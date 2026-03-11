@@ -1,6 +1,54 @@
 # WynkJS Performance Benchmark Results
 
-## Latest Benchmark - v1.0.7 (November 29, 2025)
+## Latest Benchmark - v1.0.9 (March 11, 2026)
+
+**Version:** 1.0.9  
+**Test Configuration:** 100 concurrent connections, 30 seconds duration  
+**Database:** Local PostgreSQL (`localhost:5432`, zero network latency)  
+**Runtime:** Bun (WynkJS, Raw Elysia) | Node.js (Express, NestJS)
+
+### Health Check Performance (Simple Response - No DB)
+
+| Framework | Req/Sec | Avg Latency | p99 Latency | Total Requests |
+|-----------|---------|-------------|-------------|----------------|
+| **WynkJS** ⚡ | **66,271** | **1.07ms** | **3ms** | **1,988,000** |
+| **Raw Elysia.js** | 62,587 | 1.07ms | 3ms | 1,878,000 |
+| **Express.js** | 27,533 | 3.14ms | 6ms | 826,000 |
+| **NestJS** | 24,558 | 3.52ms | 7ms | 737,000 |
+
+### Database Read Performance (GET /users — limit 100 rows, local PostgreSQL)
+
+| Framework | Req/Sec | Avg Latency | p99 Latency | Total Requests |
+|-----------|---------|-------------|-------------|----------------|
+| **Raw Elysia.js** | 2,019 | 49.01ms | 58ms | 61,000 |
+| **WynkJS** ⚡ | **1,898** | **52.14ms** | **72ms** | **57,000** |
+| **NestJS** | 1,548 | 64.06ms | 93ms | 47,000 |
+| **Express.js** | 1,520 | 65.25ms | 90ms | 46,000 |
+
+### Database Write Performance (POST /users — bcrypt + DB insert, no email uniqueness constraint)
+
+| Framework | Req/Sec | Avg Latency | p99 Latency | Errors | Non-2xx | Total Requests |
+|-----------|---------|-------------|-------------|--------|---------|----------------|
+| **WynkJS** ⚡ | **2,584** | **38.21ms** | **70ms** | **0** | **0** | **78,000** |
+| **Raw Elysia.js** | 2,023 | 48.95ms | 175ms | 0 | 0 | 61,000 |
+| **NestJS** | 1,938 | 51.08ms | 74ms | 0 | 0 | 58,000 |
+| **Express.js** | 1,752 | 56.61ms | 148ms | 0 | 0 | 53,000 |
+
+> WynkJS and Raw Elysia use Bun's native bcrypt (`Bun.password.hash`). Express and NestJS use the `bcrypt` npm package on Node.js.
+
+### Key Findings (v1.0.9 — Local PostgreSQL, March 2026):
+
+- ✅ **WynkJS #1 on health check** — 6% faster than Raw Elysia itself (66,271 vs 62,587 req/s)
+- ✅ **WynkJS #1 on DB writes** — 28% faster than Raw Elysia (2,584 vs 2,023 req/s)
+- ✅ **WynkJS #2 on DB reads** — 94% of Raw Elysia speed (1,898 vs 2,019 req/s)
+- ✅ **WynkJS beats Express.js on ALL 3 metrics** — by 2.4x, 25%, and 48%
+- ✅ **WynkJS beats NestJS on ALL 3 metrics** — by 2.7x, 23%, and 33%
+- ✅ **Zero errors, zero non-2xx** across all benchmarks
+- 📊 **Full results:** See [benchmark-latest.md](./result/benchmark-latest.md)
+
+---
+
+## Previous Benchmark - v1.0.7 (November 29, 2025)
 
 **Version:** 1.0.7  
 **New Features:** Compression Plugin, Plugin System (app.use())  
@@ -250,13 +298,12 @@ The database benchmarks reveal critical differences in framework connection mana
 
 ## Test Environment
 
-- **Runtime:** Bun v1.3.0
-- **Database:** PostgreSQL (local)
+- **Runtime:** Bun v1.3.5 (WynkJS, Raw Elysia) | Node.js (Express, NestJS)
+- **Database:** PostgreSQL (local, `localhost:5432`, zero network latency)
 - **OS:** macOS
 - **Tool:** autocannon (HTTP benchmarking)
 - **Concurrent Connections:** 100
-- **Test Duration:** 5-10 seconds per test
-- **Server Warmup:** Included in all tests
+- **Test Duration:** 30 seconds per test
 
 ---
 
@@ -264,74 +311,82 @@ The database benchmarks reveal critical differences in framework connection mana
 
 To reproduce these benchmarks, run the following autocannon commands:
 
-### Health Check Benchmarks
-
-```bash
-# WynkJS (port 3000)
-npx autocannon -c 100 -d 5 http://localhost:3000/health
-
-# Express.js (port 3001)
-npx autocannon -c 100 -d 5 http://localhost:3001/health
-
-# NestJS with Fastify (port 3002)
-npx autocannon -c 100 -d 5 http://localhost:3002/health
-
-# NestJS with Express (port 3002)
-npx autocannon -c 100 -d 5 http://localhost:3002/health
-
-# Raw Elysia.js (port 3003)
-npx autocannon -c 100 -d 5 http://localhost:3003/health
-```
-
-### Database Benchmarks
-
-```bash
-# WynkJS (port 3000)
-npx autocannon -c 100 -d 10 http://localhost:3000/users
-
-# Express.js (port 3001)
-npx autocannon -c 100 -d 10 http://localhost:3001/users
-
-# NestJS with Fastify (port 3002)
-npx autocannon -c 100 -d 10 http://localhost:3002/users
-
-# NestJS with Express (port 3002)
-npx autocannon -c 100 -d 10 http://localhost:3002/users
-
-# Raw Elysia.js (port 3003)
-npx autocannon -c 100 -d 10 http://localhost:3003/users
-```
-
 ### Server Setup
 
 Before running benchmarks, start all servers:
 
 ```bash
-# Terminal 1: WynkJS
-cd benchmark/wynkjs && bun run dev
+# Terminal 1: WynkJS (Bun)
+cd benchmark/wynkjs && bun run src/index.ts > /tmp/bench-wynkjs.log 2>&1 &
 
-# Terminal 2: Express
-cd benchmark/express && npm run dev
+# Terminal 2: Express.js (Node)
+cd benchmark/expressjs && node src/index.js > /tmp/bench-express.log 2>&1 &
 
-# Terminal 3: NestJS (Fastify)
-cd benchmark/nestjs && npm run build && node dist/main.js
+# Terminal 3: NestJS (Node)
+cd benchmark/nestjs && node dist/main.js > /tmp/bench-nestjs.log 2>&1 &
 
-# Terminal 4: NestJS (Express) - Switch adapter in src/main.ts first
-cd benchmark/nestjs && npm install @nestjs/platform-express && npm run build && node dist/main.js
+# Terminal 4: Raw Elysia (Bun)
+cd benchmark/raw-elysia && bun run index.ts > /tmp/bench-elysia.log 2>&1 &
+```
 
-# Terminal 5: Raw Elysia
-cd benchmark/raw-elysia && bun run dev
+### Health Check Benchmarks
+
+```bash
+# WynkJS (port 3000)
+bunx autocannon -c 100 -d 30 http://localhost:3000/health
+
+# Express.js (port 3001)
+bunx autocannon -c 100 -d 30 http://localhost:3001/health
+
+# NestJS (port 3002)
+bunx autocannon -c 100 -d 30 http://localhost:3002/health
+
+# Raw Elysia.js (port 3003)
+bunx autocannon -c 100 -d 30 http://localhost:3003/health
+```
+
+### Database Read Benchmarks
+
+```bash
+# WynkJS (port 3000)
+bunx autocannon -c 100 -d 30 http://localhost:3000/users
+
+# Express.js (port 3001)
+bunx autocannon -c 100 -d 30 http://localhost:3001/users
+
+# NestJS (port 3002)
+bunx autocannon -c 100 -d 30 http://localhost:3002/users
+
+# Raw Elysia.js (port 3003)
+bunx autocannon -c 100 -d 30 http://localhost:3003/users
+```
+
+### Database Write Benchmarks
+
+```bash
+PAYLOAD='{"username":"benchuser","email":"bench@test.com","password":"Test123!","first_name":"Bench","last_name":"User","mobile":"9999999999"}'
+
+# WynkJS (port 3000)
+bunx autocannon -c 100 -d 30 -m POST -H "Content-Type: application/json" -b "$PAYLOAD" http://localhost:3000/users
+
+# Express.js (port 3001)
+bunx autocannon -c 100 -d 30 -m POST -H "Content-Type: application/json" -b "$PAYLOAD" http://localhost:3001/users
+
+# NestJS (port 3002)
+bunx autocannon -c 100 -d 30 -m POST -H "Content-Type: application/json" -b "$PAYLOAD" http://localhost:3002/users
+
+# Raw Elysia.js (port 3003)
+bunx autocannon -c 100 -d 30 -m POST -H "Content-Type: application/json" -b "$PAYLOAD" http://localhost:3003/users
 ```
 
 ### Notes:
 
-- **NestJS Adapter Switch**: To test NestJS with Express adapter, modify `src/main.ts` to use `NestFactory.create()` without Fastify adapter and install `@nestjs/platform-express`
-- **Connection Pooling**: Ensure PostgreSQL can handle concurrent connections (default: 100)
-- **Database Seeding**: Database should have sufficient test data (100+ users recommended)
+- **Connection Pooling**: Ensure PostgreSQL can handle concurrent connections (`max_connections` ≥ 100)
+- **Database Seeding**: Table should have 100+ rows for realistic read benchmarks
 - **Autocannon Options**:
   - `-c 100`: 100 concurrent connections
-  - `-d 5` or `-d 10`: Test duration in seconds
-  - Add `-p 10` for pipelining if needed
+  - `-d 30`: 30 second duration
+  - `--json`: Output raw JSON for parsing
 
 ```
 

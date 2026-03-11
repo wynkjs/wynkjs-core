@@ -74,6 +74,21 @@ export function UseFilters(
  * Built-in HTTP Exceptions
  */
 
+/**
+ * Base HTTP exception class. All WynkJS HTTP exceptions extend this.
+ *
+ * Throw any `HttpException` subclass from a controller method — WynkJS will
+ * convert it into the appropriate HTTP response automatically.
+ *
+ * @param message - Human-readable error description sent in the response body.
+ * @param statusCode - HTTP status code (e.g. `404`, `500`).
+ * @param error - Short error category string (e.g. `'Not Found'`). Optional.
+ *
+ * @example
+ * ```typescript
+ * throw new HttpException('Custom error', 418);
+ * ```
+ */
 export class HttpException extends Error {
   constructor(
     public readonly message: string,
@@ -101,78 +116,91 @@ export class HttpException extends Error {
   }
 }
 
+/** Thrown when the request is malformed or contains invalid data (HTTP 400). */
 export class BadRequestException extends HttpException {
   constructor(message: string = "Bad Request") {
     super(message, 400, "Bad Request");
   }
 }
 
+/** Thrown when the request lacks valid authentication credentials (HTTP 401). */
 export class UnauthorizedException extends HttpException {
   constructor(message: string = "Unauthorized") {
     super(message, 401, "Unauthorized");
   }
 }
 
+/** Thrown when the authenticated user does not have permission (HTTP 403). */
 export class ForbiddenException extends HttpException {
   constructor(message: string = "Forbidden") {
     super(message, 403, "Forbidden");
   }
 }
 
+/** Thrown when the requested resource does not exist (HTTP 404). */
 export class NotFoundException extends HttpException {
   constructor(message: string = "Not Found") {
     super(message, 404, "Not Found");
   }
 }
 
+/** Thrown when the HTTP method is not supported for the endpoint (HTTP 405). */
 export class MethodNotAllowedException extends HttpException {
   constructor(message: string = "Method Not Allowed") {
     super(message, 405, "Method Not Allowed");
   }
 }
 
+/** Thrown when the server cannot produce a response matching the `Accept` header (HTTP 406). */
 export class NotAcceptableException extends HttpException {
   constructor(message: string = "Not Acceptable") {
     super(message, 406, "Not Acceptable");
   }
 }
 
+/** Thrown when the server did not receive a timely response (HTTP 408). */
 export class RequestTimeoutException extends HttpException {
   constructor(message: string = "Request Timeout") {
     super(message, 408, "Request Timeout");
   }
 }
 
+/** Thrown when the request conflicts with the current state of the resource (HTTP 409). */
 export class ConflictException extends HttpException {
   constructor(message: string = "Conflict") {
     super(message, 409, "Conflict");
   }
 }
 
+/** Thrown when a resource already exists and cannot be created again (HTTP 409). */
 export class AlreadyExistsException extends HttpException {
   constructor(message: string = "Resource Already Exists") {
     super(message, 409, "Conflict");
   }
 }
 
+/** Thrown when the requested resource is no longer available (HTTP 410). */
 export class GoneException extends HttpException {
   constructor(message: string = "Gone") {
     super(message, 410, "Gone");
   }
 }
 
+/** Thrown when the request body exceeds the server's size limit (HTTP 413). */
 export class PayloadTooLargeException extends HttpException {
   constructor(message: string = "Payload Too Large") {
     super(message, 413, "Payload Too Large");
   }
 }
 
+/** Thrown when the request's `Content-Type` is not supported (HTTP 415). */
 export class UnsupportedMediaTypeException extends HttpException {
   constructor(message: string = "Unsupported Media Type") {
     super(message, 415, "Unsupported Media Type");
   }
 }
 
+/** Thrown when the request is well-formed but cannot be processed (HTTP 422). */
 export class UnprocessableEntityException extends HttpException {
   constructor(message: string = "Unprocessable Entity") {
     super(message, 422, "Unprocessable Entity");
@@ -206,6 +234,18 @@ export class ServiceUnavailableException extends HttpException {
 export class GatewayTimeoutException extends HttpException {
   constructor(message: string = "Gateway Timeout") {
     super(message, 504, "Gateway Timeout");
+  }
+}
+
+export class TooManyRequestsException extends HttpException {
+  constructor(message: string = "Too Many Requests") {
+    super(message, 429, "Too Many Requests");
+  }
+}
+
+export class HttpVersionNotSupportedException extends HttpException {
+  constructor(message: string = "HTTP Version Not Supported") {
+    super(message, 505, "HTTP Version Not Supported");
   }
 }
 
@@ -273,7 +313,7 @@ export class HttpWynkExceptionFilter
   implements WynkExceptionFilter<HttpException>
 {
   catch(exception: HttpException, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
     const status = exception.getStatus();
 
     return {
@@ -290,7 +330,7 @@ export class HttpWynkExceptionFilter
 @Catch()
 export class AllExceptions implements WynkExceptionFilter {
   catch(exception: any, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
@@ -332,7 +372,7 @@ export class AuthenticationException
   implements WynkExceptionFilter<UnauthorizedException>
 {
   catch(exception: UnauthorizedException, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
     const request = context.getRequest();
 
     return {
@@ -367,7 +407,7 @@ export class AuthorizationException
   implements WynkExceptionFilter<ForbiddenException>
 {
   catch(exception: ForbiddenException, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
     const request = context.getRequest();
 
     return {
@@ -392,7 +432,7 @@ export class AuthorizationException
  */
 export class RateLimitException implements WynkExceptionFilter {
   catch(exception: any, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
     const request = context.getRequest();
 
     // Don't catch HttpException or its subclasses
@@ -421,7 +461,7 @@ export class RateLimitException implements WynkExceptionFilter {
  */
 export class BusinessLogicException implements WynkExceptionFilter {
   catch(exception: any, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
     const request = context.getRequest();
 
     // Don't catch HttpException or its subclasses

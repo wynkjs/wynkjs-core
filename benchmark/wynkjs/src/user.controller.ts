@@ -1,9 +1,26 @@
 import { Controller, Get, Post, Body, Param, Injectable, Query } from "wynkjs";
 import { DatabaseService } from "./database.service";
 import { CreateUserDTO, UserIdDTO } from "./user.dto";
-import type { CreateUserType, UserIdType } from "./user.dto";
+import type { CreateUserType } from "./user.dto";
 import { userTable } from "./schema";
-import { eq, sql, count } from "drizzle-orm";
+import { eq, count, asc } from "drizzle-orm";
+
+const PUBLIC_USER_FIELDS = new Set([
+  "id",
+  "username",
+  "email",
+  "mobile",
+  "firstName",
+  "lastName",
+  "isActive",
+  "emailVerified",
+  "firstTimeLogin",
+  "createdAt",
+  "updatedAt",
+] as const);
+
+type PublicUserField =
+  typeof PUBLIC_USER_FIELDS extends Set<infer T> ? T : never;
 
 @Injectable()
 @Controller("/users")
@@ -14,26 +31,31 @@ export class UserController {
   async findAll(
     @Query("page") page?: string,
     @Query("limit") limit?: string,
-    @Query("fields") fields?: string
+    @Query("fields") fields?: string,
   ) {
     const db = this.dbService.getDb();
 
-    // Parse pagination params with defaults
     const pageNum = Math.max(1, parseInt(page || "1"));
-    const limitNum = Math.min(1000, Math.max(1, parseInt(limit || "100"))); // Default 100, max 1000
+    const limitNum = Math.min(1000, Math.max(1, parseInt(limit || "100")));
     const offset = (pageNum - 1) * limitNum;
 
-    // If fields are requested, select only those fields
-    let selectFields: any = {};
+    let selectFields: Partial<
+      Record<PublicUserField, (typeof userTable)[PublicUserField]>
+    > = {};
     if (fields) {
       const requestedFields = fields.split(",").map((f) => f.trim());
-      requestedFields.forEach((field) => {
-        if (userTable[field as keyof typeof userTable]) {
-          selectFields[field] = userTable[field as keyof typeof userTable];
+      for (const field of requestedFields) {
+        if (PUBLIC_USER_FIELDS.has(field as PublicUserField)) {
+          const col = field as PublicUserField;
+          selectFields[col] = userTable[
+            col
+          ] as (typeof userTable)[PublicUserField];
         }
-      });
+      }
+      if (Object.keys(selectFields).length === 0) {
+        return { error: "No valid public fields requested" };
+      }
     } else {
-      // Default: select all fields except password
       selectFields = {
         id: userTable.id,
         username: userTable.username,
@@ -49,26 +71,28 @@ export class UserController {
       };
     }
 
-    // Get total count efficiently (without fetching rows)
-    const [{ value: totalCount }] = await db
+    const [{ value: total }] = await db
       .select({ value: count() })
       .from(userTable);
 
-    // Fetch paginated data
     const users = await db
       .select(selectFields)
       .from(userTable)
+      .orderBy(asc(userTable.id))
       .limit(limitNum)
       .offset(offset);
+
+    const totalPages = Math.ceil(total / limitNum);
+    const hasNext = offset + users.length < total;
 
     return {
       users,
       pagination: {
         page: pageNum,
         limit: limitNum,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limitNum),
-        hasNext: pageNum * limitNum < totalCount,
+        total,
+        totalPages,
+        hasNext,
         hasPrev: pageNum > 1,
       },
     };
@@ -78,7 +102,19 @@ export class UserController {
   async findOne(@Param("id") id: string) {
     const db = this.dbService.getDb();
     const users = await db
-      .select()
+      .select({
+        id: userTable.id,
+        username: userTable.username,
+        email: userTable.email,
+        mobile: userTable.mobile,
+        firstName: userTable.firstName,
+        lastName: userTable.lastName,
+        isActive: userTable.isActive,
+        emailVerified: userTable.emailVerified,
+        firstTimeLogin: userTable.firstTimeLogin,
+        createdAt: userTable.createdAt,
+        updatedAt: userTable.updatedAt,
+      })
       .from(userTable)
       .where(eq(userTable.id, id))
       .limit(1);
@@ -94,13 +130,12 @@ export class UserController {
   async create(@Body() body: CreateUserType) {
     const db = this.dbService.getDb();
 
-    // Hash password using Bun's built-in bcrypt
     const hashedPassword = await Bun.password.hash(
       body.password || "password123",
       {
         algorithm: "bcrypt",
-        cost: 4, // Reduced for benchmarking (was 10)
-      }
+        cost: 4,
+      },
     );
 
     const result = await db
@@ -109,7 +144,19 @@ export class UserController {
         ...body,
         password: hashedPassword,
       })
-      .returning();
+      .returning({
+        id: userTable.id,
+        username: userTable.username,
+        email: userTable.email,
+        mobile: userTable.mobile,
+        firstName: userTable.firstName,
+        lastName: userTable.lastName,
+        isActive: userTable.isActive,
+        emailVerified: userTable.emailVerified,
+        firstTimeLogin: userTable.firstTimeLogin,
+        createdAt: userTable.createdAt,
+        updatedAt: userTable.updatedAt,
+      });
 
     return result[0];
   }

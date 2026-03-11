@@ -5,6 +5,21 @@ import "reflect-metadata";
  * Extract data from request context
  */
 
+/**
+ * Identifies the source from which a parameter decorator extracts its value.
+ *
+ * - `body`    — request body (JSON payload)
+ * - `param`   — URL path parameter (e.g. `/users/:id`)
+ * - `query`   — query string parameter (e.g. `?page=1`)
+ * - `headers` — HTTP request headers
+ * - `request` — full Elysia request object
+ * - `response` — Elysia response/set object
+ * - `context`  — full Elysia context
+ * - `user`     — user object attached to context by a guard
+ * - `file`     — single uploaded file
+ * - `files`    — multiple uploaded files
+ * - `custom`   — value produced by a `createParamDecorator` factory function
+ */
 export type ParamType =
   | "body"
   | "param"
@@ -15,13 +30,25 @@ export type ParamType =
   | "context"
   | "user"
   | "file"
-  | "files";
+  | "files"
+  | "custom";
 
+/**
+ * Internal metadata stored for each decorated parameter in a controller method.
+ * Populated by parameter decorators (`@Body`, `@Param`, `@Query`, etc.) and
+ * consumed by the ultra-optimized handler at request time.
+ */
 export interface ParamMetadata {
+  /** Zero-based position of this parameter in the method signature. */
   index: number;
+  /** Where to extract the value from — see {@link ParamType}. */
   type: ParamType;
+  /** Optional key to pluck from the source (e.g. param name or header name). */
   data?: string;
+  /** Optional pipes applied to the extracted value before it reaches the handler. */
   pipes?: any[];
+  /** Factory function used when `type === 'custom'` (from `createParamDecorator`). */
+  factory?: (data: any, ctx: any) => any;
 }
 
 /**
@@ -29,7 +56,7 @@ export interface ParamMetadata {
  */
 function createParamDecorator(type: ParamType, data?: string, pipes?: any[]) {
   return (
-    target: Object,
+    target: object,
     propertyKey: string | symbol | undefined,
     parameterIndex: number
   ) => {
@@ -191,7 +218,7 @@ export function UploadedFiles(): ParameterDecorator {
  */
 export function Ip(): ParameterDecorator {
   return (
-    target: Object,
+    target: object,
     propertyKey: string | symbol | undefined,
     parameterIndex: number
   ) => {
@@ -222,7 +249,7 @@ export function Ip(): ParameterDecorator {
  */
 export function Session(property?: string): ParameterDecorator {
   return (
-    target: Object,
+    target: object,
     propertyKey: string | symbol | undefined,
     parameterIndex: number
   ) => {
@@ -253,7 +280,7 @@ export function Session(property?: string): ParameterDecorator {
  */
 export function HostParam(property: string): ParameterDecorator {
   return (
-    target: Object,
+    target: object,
     propertyKey: string | symbol | undefined,
     parameterIndex: number
   ) => {

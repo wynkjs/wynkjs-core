@@ -61,7 +61,7 @@ export class ValidationPipe implements ValidationPipeTransform {
   /**
    * Transform method (not used for WynkJS validation, but required by interface)
    */
-  transform(value: any, metadata: ArgumentMetadata): any {
+  transform(value: any, _metadata: ArgumentMetadata): any {
     return value;
   }
 

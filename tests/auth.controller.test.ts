@@ -1,3 +1,4 @@
+import "reflect-metadata";
 // @ts-nocheck
 import { describe, it, expect } from "bun:test";
 import { WynkFactory } from "../core/factory";
@@ -14,7 +15,7 @@ class MockAuthService {
     password: string,
     firstName?: string,
     lastName?: string,
-    username?: string
+    username?: string,
   ) {
     const id = (Object.keys(this.users).length + 1).toString();
     const user = { id, email, firstName, lastName, username };
@@ -56,17 +57,38 @@ class MockAuthService {
 
   createToken(payload: any, secret: string, expiresIn: number = 3600) {
     const header = Buffer.from(
-      JSON.stringify({ alg: "HS256", typ: "JWT" })
-    ).toString("base64");
+      JSON.stringify({ alg: "HS256", typ: "JWT" }),
+    ).toString("base64url");
     const body = Buffer.from(
       JSON.stringify({
         ...payload,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + expiresIn,
-      })
-    ).toString("base64");
-    const signature = Buffer.from(secret || "test-secret").toString("base64");
+      }),
+    ).toString("base64url");
+    const hasher = new Bun.CryptoHasher("sha256", secret || "test-secret");
+    hasher.update(`${header}.${body}`);
+    const signature = hasher.digest("base64url");
     return `${header}.${body}.${signature}`;
+  }
+
+  verifyToken(token: string, secret: string): any {
+    try {
+      const parts = token.split(".");
+      if (parts.length !== 3) return null;
+      const [header, body, sig] = parts;
+      const hasher = new Bun.CryptoHasher("sha256", secret);
+      hasher.update(`${header}.${body}`);
+      const expected = hasher.digest("base64url");
+      if (sig !== expected) return null;
+      const decoded = Buffer.from(body, "base64url").toString("utf-8");
+      const payload = JSON.parse(decoded);
+      if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp)
+        return null;
+      return payload;
+    } catch {
+      return null;
+    }
   }
 }
 

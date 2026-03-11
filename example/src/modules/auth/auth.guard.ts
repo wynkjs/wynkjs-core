@@ -1,5 +1,9 @@
 import type { UserRole, AuthUser } from "./auth.types";
-import { type WynkRequest, type WynkResponse } from "wynkjs";
+import { type WynkRequest, type WynkResponse, Container } from "wynkjs";
+import { AuthService } from "./auth.service";
+
+/** Shared JWT secret — must match the secret used in AuthController */
+const JWT_SECRET = "wynkjs-demo-secret";
 
 /**
  * JWT Guard and RBAC Implementation - Middleware Pattern with Request/Response
@@ -35,35 +39,27 @@ export const jwtGuard = async (ctx: any, next: Function) => {
     return { error: "Unauthorized", message: "Authentication required" };
   }
 
-  try {
-    // Decode JWT token (in production, use jsonwebtoken library for verification)
-    const decoded = Buffer.from(token.split(".")[1] || "", "base64").toString(
-      "utf-8"
-    );
-    const payload = JSON.parse(decoded);
-
-    const user: AuthUser = {
-      id: payload.id,
-      email: payload.email,
-      roles: payload.roles || ["guest"],
-      username: payload.username,
-      firstName: payload.firstName,
-      lastName: payload.lastName,
-    };
-
-    // Attach user to context (for backward compatibility)
-    ctx.user = user;
-    ctx.token = token;
-
-    // Also attach to Request object
-    request.user = user;
-    request.set("token", token);
-
-    return next();
-  } catch (error) {
+  const payload = Container.resolve(AuthService).verifyToken(token, JWT_SECRET);
+  if (!payload) {
     response.status(401);
     return { error: "Unauthorized", message: "Invalid token" };
   }
+
+  const user: AuthUser = {
+    id: payload.id,
+    email: payload.email,
+    roles: payload.roles || ["guest"],
+    username: payload.username,
+    firstName: payload.firstName,
+    lastName: payload.lastName,
+  };
+
+  ctx.user = user;
+  ctx.token = token;
+  request.user = user;
+  request.set("token", token);
+
+  return next();
 };
 
 /**
@@ -133,85 +129,61 @@ export class AuthGuard {
       return false;
     }
 
-    try {
-      const decoded = Buffer.from(token.split(".")[1] || "", "base64").toString(
-        "utf-8"
-      );
-      const payload = JSON.parse(decoded);
-
-      const user: AuthUser = {
-        id: payload.id,
-        email: payload.email,
-        roles: payload.roles || ["guest"],
-        username: payload.username,
-        firstName: payload.firstName,
-        lastName: payload.lastName,
-      };
-
-      // Attach to context and request for controllers to read
-      if (context) {
-        try {
-          const ctx = context.getContext ? context.getContext() : context;
-          if (ctx) {
-            ctx.user = user;
-            ctx.token = token;
-          }
-        } catch {}
-      }
-
-      try {
-        request.user = user;
-        if (typeof request.set === "function") request.set("token", token);
-      } catch {}
-
-      return true;
-    } catch (error) {
+    const payload = Container.resolve(AuthService).verifyToken(token, JWT_SECRET);
+    if (!payload) {
       if (response && typeof response.status === "function") {
         response.status(401);
       }
       return false;
     }
+
+    const user: AuthUser = {
+      id: payload.id,
+      email: payload.email,
+      roles: payload.roles || ["guest"],
+      username: payload.username,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+    };
+
+    if (context) {
+      try {
+        const ctx = context.getContext ? context.getContext() : context;
+        if (ctx) {
+          ctx.user = user;
+          ctx.token = token;
+        }
+      } catch {}
+    }
+
+    try {
+      request.user = user;
+      if (typeof request.set === "function") request.set("token", token);
+    } catch {}
+
+    return true;
   }
   /**
    * Verify JWT token from Authorization header
    * Expected format: "Bearer <token>"
    */
   static verifyToken(authHeader: string | undefined): AuthUser | null {
-    if (!authHeader) {
-      return null;
-    }
+    if (!authHeader) return null;
 
     const parts = authHeader.split(" ");
-    if (parts.length !== 2 || parts[0] !== "Bearer") {
-      return null;
-    }
+    if (parts.length !== 2 || parts[0] !== "Bearer") return null;
 
-    try {
-      const token = parts[1];
-      const decoded = Buffer.from(token.split(".")[1] || "", "base64").toString(
-        "utf-8"
-      );
-      const payload = JSON.parse(decoded);
+    const payload = Container.resolve(AuthService).verifyToken(parts[1], JWT_SECRET);
+    if (!payload) return null;
 
-      // Check token expiry if present (exp is seconds since epoch)
-      if (payload && typeof payload.exp === "number") {
-        const now = Math.floor(Date.now() / 1000);
-        if (payload.exp <= now) {
-          return null;
-        }
-      }
-
-      return {
-        id: payload.id,
-        email: payload.email,
-        roles: payload.roles || ["guest"],
-        username: payload.username,
-        firstName: payload.firstName,
-        lastName: payload.lastName,
-      };
-    } catch (error) {
-      return null;
-    }
+    return {
+      id: payload.id,
+      email: payload.email,
+      roles: payload.roles || ["guest"],
+      username: payload.username,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+    };
   }
 
   /**

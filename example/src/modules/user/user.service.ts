@@ -1,61 +1,66 @@
 import { Injectable } from "wynkjs";
-import { DatabaseService } from "../../database";
-import { userTable } from "../../database/schema";
-import { eq } from "drizzle-orm";
 
 export interface User {
-  id: string; // UUID
+  id: string;
   username?: string;
   email: string;
   mobile?: string;
   firstName?: string;
   lastName?: string;
-  isActive?: boolean;
-  emailVerified?: boolean;
+  age?: number;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
 @Injectable()
 export class UserService {
-  private readonly db; // ✅ Store db instance once
+  private store: Map<string, User> = new Map();
+  private counter = 1;
 
-  constructor(private readonly databaseService: DatabaseService) {
-    this.db = databaseService.db; // ✅ Get it once in constructor
+  constructor() {
+    this.seed();
   }
 
-  /**
-   * Get all users from database
-   */
+  private seed() {
+    const demo: User[] = [
+      {
+        id: "user-1",
+        email: "alice@example.com",
+        firstName: "Alice",
+        lastName: "Smith",
+        username: "alice",
+        isActive: true,
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
+      },
+      {
+        id: "user-2",
+        email: "bob@example.com",
+        firstName: "Bob",
+        lastName: "Jones",
+        username: "bob",
+        isActive: true,
+        createdAt: new Date("2024-01-02"),
+        updatedAt: new Date("2024-01-02"),
+      },
+    ];
+    demo.forEach((u) => this.store.set(u.id, u));
+    this.counter = 3;
+  }
+
   async findAll(): Promise<User[]> {
-    return await this.db.select().from(userTable);
+    return Array.from(this.store.values());
   }
 
-  /**
-   * Find user by ID (UUID)
-   */
   async findById(id: string): Promise<User | undefined> {
-    const [user] = await this.db
-      .select()
-      .from(userTable)
-      .where(eq(userTable.id, id));
-    return user;
+    return this.store.get(id);
   }
 
-  /**
-   * Find user by email
-   */
   async findByEmail(email: string): Promise<User | undefined> {
-    const [user] = await this.db
-      .select()
-      .from(userTable)
-      .where(eq(userTable.email, email));
-    return user;
+    return Array.from(this.store.values()).find((u) => u.email === email);
   }
 
-  /**
-   * Create a new user
-   */
   async create(data: {
     email: string;
     username?: string;
@@ -63,23 +68,25 @@ export class UserService {
     lastName?: string;
     mobile?: string;
   }): Promise<User> {
-    const [user] = await this.db
-      .insert(userTable)
-      .values({
-        email: data.email,
-        username: data.username,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        mobile: data.mobile,
-      })
-      .returning();
-
+    const emailTaken = Array.from(this.store.values()).some((u) => u.email === data.email);
+    if (emailTaken) throw new Error("User with this email already exists");
+    const id = `user-${this.counter++}`;
+    const now = new Date();
+    const user: User = {
+      id,
+      email: data.email,
+      username: data.username,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      mobile: data.mobile,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.store.set(id, user);
     return user;
   }
 
-  /**
-   * Update a user
-   */
   async update(
     id: string,
     data: Partial<{
@@ -88,29 +95,20 @@ export class UserService {
       firstName: string;
       lastName: string;
       mobile: string;
+      age: number;
     }>
   ): Promise<User | undefined> {
-    const [user] = await this.db
-      .update(userTable)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
-      .where(eq(userTable.id, id))
-      .returning();
-
-    return user;
+    const user = this.store.get(id);
+    if (!user) return undefined;
+    if (data.email && Array.from(this.store.values()).some((u) => u.id !== id && u.email === data.email)) {
+      throw new Error("User with this email already exists");
+    }
+    const updated: User = { ...user, ...data, updatedAt: new Date() };
+    this.store.set(id, updated);
+    return updated;
   }
 
-  /**
-   * Delete a user
-   */
   async delete(id: string): Promise<boolean> {
-    const result = await this.db
-      .delete(userTable)
-      .where(eq(userTable.id, id))
-      .returning();
-
-    return result.length > 0;
+    return this.store.delete(id);
   }
 }

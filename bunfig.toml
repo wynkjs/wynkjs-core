@@ -1,0 +1,2 @@
+[bun.alias]
+wynkjs = "./dist/index.js"

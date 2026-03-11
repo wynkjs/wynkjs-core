@@ -1,4 +1,11 @@
 import { Elysia } from "elysia";
+import * as zlib from "node:zlib";
+import { promisify } from "node:util";
+
+// Pre-create promisified compression functions at module load time (not per-request)
+const gzipAsync = promisify(zlib.gzip);
+const brotliCompressAsync = promisify(zlib.brotliCompress);
+const deflateAsync = promisify(zlib.deflate);
 
 /**
  * Compression Plugin Options
@@ -78,11 +85,11 @@ export interface CompressionOptions {
  * ```
  */
 export function compression(
-  options: CompressionOptions = {}
+  options: CompressionOptions = {},
 ): (app: any) => any {
   const config: Required<CompressionOptions> = {
     threshold: options.threshold ?? 1024,
-    encodings: options.encodings ?? ["gzip", "br", "deflate"],
+    encodings: options.encodings ?? ["br", "gzip", "deflate"],
     brotliOptions: options.brotliOptions ?? {},
     zlibOptions: options.zlibOptions ?? {},
   };
@@ -97,15 +104,27 @@ export function compression(
       // Skip if already compressed
       if (set.headers?.["content-encoding"]) return;
 
-      // Get client's accepted encodings
+      // Get client's accepted encodings with proper RFC q-value parsing
       const acceptEncoding = (
         request.headers.get("accept-encoding") || ""
       ).toLowerCase();
 
-      // Find best compression match
+      // Parse Accept-Encoding header respecting q-values per RFC 7231 §5.3.4
+      const clientEncodings = acceptEncoding
+        .split(",")
+        .map((part) => {
+          const [enc, qParam] = part.trim().split(/;\s*q=/);
+          const q = qParam !== undefined ? parseFloat(qParam) : 1.0;
+          return { enc: enc.trim(), q };
+        })
+        .filter(({ q }) => q !== 0)
+        .sort((a, b) => b.q - a.q)
+        .map(({ enc }) => enc);
+
+      // Find best compression match: prefer server encoding order, skip q=0
       let encoding: "br" | "gzip" | "deflate" | null = null;
       for (const enc of config.encodings) {
-        if (acceptEncoding.includes(enc)) {
+        if (clientEncodings.includes(enc)) {
           encoding = enc;
           break;
         }
@@ -132,25 +151,16 @@ export function compression(
 
       // Compress
       try {
-        const zlib = await import("node:zlib");
-        const { promisify } = await import("node:util");
-
         let compressed: Buffer;
         switch (encoding) {
           case "br":
-            compressed = await promisify(zlib.brotliCompress)(
-              body,
-              config.brotliOptions
-            );
+            compressed = await brotliCompressAsync(body, config.brotliOptions);
             break;
           case "gzip":
-            compressed = await promisify(zlib.gzip)(body, config.zlibOptions);
+            compressed = await gzipAsync(body, config.zlibOptions);
             break;
           case "deflate":
-            compressed = await promisify(zlib.deflate)(
-              body,
-              config.zlibOptions
-            );
+            compressed = await deflateAsync(body, config.zlibOptions);
             break;
           default:
             return;

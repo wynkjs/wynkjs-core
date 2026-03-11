@@ -14,7 +14,7 @@ import { BadRequestException } from "./exception.decorators";
  * async getByDate(@Param('date', ParseDatePipe) date: Date) {}
  */
 export class ParseDatePipe implements WynkPipeTransform<string, Date> {
-  transform(value: string, metadata?: ArgumentMetadata): Date {
+  transform(value: string, _metadata?: ArgumentMetadata): Date {
     if (!value) {
       throw new BadRequestException("Date value is required");
     }
@@ -30,74 +30,34 @@ export class ParseDatePipe implements WynkPipeTransform<string, Date> {
 }
 
 /**
- * Parse File Pipe - Validates and transforms file uploads
- * @example
- * @Post('/upload')
- * async uploadFile(@UploadedFile(ParseFilePipe) file: any) {}
- */
-export class ParseFilePipe implements WynkPipeTransform<any, any> {
-  constructor(
-    private options?: {
-      maxSize?: number; // in bytes
-      allowedTypes?: string[];
-      required?: boolean;
-    }
-  ) {}
-
-  transform(value: any, metadata?: ArgumentMetadata): any {
-    if (!value) {
-      if (this.options?.required) {
-        throw new BadRequestException("File is required");
-      }
-      return null;
-    }
-
-    // Check file size
-    if (this.options?.maxSize && value.size > this.options.maxSize) {
-      const maxSizeMB = (this.options.maxSize / (1024 * 1024)).toFixed(2);
-      throw new BadRequestException(`File size exceeds ${maxSizeMB}MB limit`);
-    }
-
-    // Check file type
-    if (
-      this.options?.allowedTypes &&
-      !this.options.allowedTypes.includes(value.type)
-    ) {
-      throw new BadRequestException(
-        `File type must be one of: ${this.options.allowedTypes.join(", ")}`
-      );
-    }
-
-    return value;
-  }
-}
-
-/**
  * Sanitize Pipe - Sanitizes input by removing dangerous characters
+ *
+ * SECURITY NOTICE: This pipe provides basic normalization (script tag removal,
+ * javascript: protocol stripping, inline event handler removal). It is NOT a
+ * replacement for a dedicated XSS sanitization library such as `sanitize-html`
+ * or `DOMPurify` when rendering user content as HTML. Use this pipe for
+ * light input cleaning only; apply a full sanitizer at the HTML rendering layer.
+ *
  * @example
  * @Post()
  * async create(@Body(SanitizePipe) data: any) {}
  */
 export class SanitizePipe implements WynkPipeTransform {
-  private dangerousPatterns = [
-    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-    /javascript:/gi,
-    /on\w+\s*=/gi,
-  ];
+  private dangerousPatterns = [/javascript:/gi];
 
-  transform(value: any, metadata?: ArgumentMetadata): any {
+  transform(value: any, _metadata?: ArgumentMetadata): any {
     if (typeof value === "string") {
       return this.sanitizeString(value);
     }
 
     if (Array.isArray(value)) {
-      return value.map((item) => this.transform(item, metadata));
+      return value.map((item) => this.transform(item, _metadata));
     }
 
     if (value && typeof value === "object") {
       const sanitized: any = {};
       for (const key in value) {
-        sanitized[key] = this.transform(value[key], metadata);
+        sanitized[key] = this.transform(value[key], _metadata);
       }
       return sanitized;
     }
@@ -106,13 +66,72 @@ export class SanitizePipe implements WynkPipeTransform {
   }
 
   private sanitizeString(str: string): string {
-    let sanitized = str;
+    let sanitized = this.removeScriptTags(str);
 
     for (const pattern of this.dangerousPatterns) {
       sanitized = sanitized.replace(pattern, "");
     }
 
+    sanitized = this.removeEventHandlers(sanitized);
+
     return sanitized;
+  }
+
+  private removeEventHandlers(str: string): string {
+    let result = str;
+    let i = 0;
+    while (i < result.length - 2) {
+      if (result[i] === "o" && result[i + 1] === "n") {
+        const attrStart = i;
+        let j = i + 2;
+        while (
+          j < result.length &&
+          ((result[j] >= "a" && result[j] <= "z") ||
+            (result[j] >= "A" && result[j] <= "Z"))
+        ) {
+          j++;
+          if (j - (i + 2) > 30) break;
+        }
+        if (j > i + 2 && j < result.length) {
+          let k = j;
+          while (
+            k < result.length &&
+            (result[k] === " " ||
+              result[k] === "\t" ||
+              result[k] === "\n" ||
+              result[k] === "\r")
+          ) {
+            k++;
+          }
+          if (k < result.length && result[k] === "=") {
+            result = result.slice(0, attrStart) + result.slice(k + 1);
+            i = attrStart;
+            continue;
+          }
+        }
+      }
+      i++;
+    }
+    return result;
+  }
+
+  private removeScriptTags(str: string): string {
+    let result = str;
+    let offset = 0;
+
+    let start = result.toLowerCase().indexOf("<script", offset);
+    while (start !== -1) {
+      const end = result.toLowerCase().indexOf("</script>", start);
+      if (end === -1) {
+        result = result.slice(0, start);
+        break;
+      }
+      result = result.slice(0, start) + result.slice(end + 9);
+      offset = start;
+      start = result.toLowerCase().indexOf("<script", offset);
+    }
+
+    return result;
   }
 }
 
@@ -125,7 +144,7 @@ export class SanitizePipe implements WynkPipeTransform {
 export class TransformCasePipe implements WynkPipeTransform<string, string> {
   constructor(private caseType: "lower" | "upper" | "title" = "lower") {}
 
-  transform(value: string, metadata?: ArgumentMetadata): string {
+  transform(value: string, _metadata?: ArgumentMetadata): string {
     if (typeof value !== "string") {
       return value;
     }
@@ -137,7 +156,7 @@ export class TransformCasePipe implements WynkPipeTransform<string, string> {
         return value.toUpperCase();
       case "title":
         return value.replace(/\w\S*/g, (txt) => {
-          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+          return txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase();
         });
       default:
         return value;
@@ -152,14 +171,14 @@ export class TransformCasePipe implements WynkPipeTransform<string, string> {
  * async create(@Body('metadata', ParseJSONPipe) metadata: any) {}
  */
 export class ParseJSONPipe implements WynkPipeTransform<string, any> {
-  transform(value: string, metadata?: ArgumentMetadata): any {
+  transform(value: string, _metadata?: ArgumentMetadata): any {
     if (!value || typeof value !== "string") {
       return value;
     }
 
     try {
       return JSON.parse(value);
-    } catch (error) {
+    } catch (_error) {
       throw new BadRequestException("Invalid JSON format");
     }
   }
@@ -172,14 +191,25 @@ export class ParseJSONPipe implements WynkPipeTransform<string, any> {
  * async create(@Body('email', ValidateEmailPipe) email: string) {}
  */
 export class ValidateEmailPipe implements WynkPipeTransform<string, string> {
-  private emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  private emailRegex =
+    /^[a-zA-Z0-9._%+\-]{1,64}@[a-zA-Z0-9.\-]{1,253}\.[a-zA-Z]{2,}$/;
 
-  transform(value: string, metadata?: ArgumentMetadata): string {
+  transform(value: string, _metadata?: ArgumentMetadata): string {
     if (!value) {
       throw new BadRequestException("Email is required");
     }
 
     if (!this.emailRegex.test(value)) {
+      throw new BadRequestException("Invalid email format");
+    }
+
+    const [, domain] = value.split("@");
+    const labels = domain.split(".");
+    const domainInvalid = labels.some(
+      (label) =>
+        label.length === 0 || label.startsWith("-") || label.endsWith("-"),
+    );
+    if (domainInvalid) {
       throw new BadRequestException("Invalid email format");
     }
 
@@ -196,10 +226,10 @@ export class ValidateEmailPipe implements WynkPipeTransform<string, string> {
 export class ValidateLengthPipe implements WynkPipeTransform {
   constructor(
     private min?: number,
-    private max?: number
+    private max?: number,
   ) {}
 
-  transform(value: any, metadata?: ArgumentMetadata): any {
+  transform(value: any, _metadata?: ArgumentMetadata): any {
     if (!value) {
       return value;
     }
@@ -209,13 +239,13 @@ export class ValidateLengthPipe implements WynkPipeTransform {
 
     if (this.min !== undefined && length < this.min) {
       throw new BadRequestException(
-        `Length must be at least ${this.min} characters`
+        `Length must be at least ${this.min} characters`,
       );
     }
 
     if (this.max !== undefined && length > this.max) {
       throw new BadRequestException(
-        `Length must not exceed ${this.max} characters`
+        `Length must not exceed ${this.max} characters`,
       );
     }
 
@@ -232,10 +262,10 @@ export class ValidateLengthPipe implements WynkPipeTransform {
 export class ValidateRangePipe implements WynkPipeTransform<number, number> {
   constructor(
     private min?: number,
-    private max?: number
+    private max?: number,
   ) {}
 
-  transform(value: number, metadata?: ArgumentMetadata): number {
+  transform(value: number, _metadata?: ArgumentMetadata): number {
     const num = typeof value === "string" ? parseFloat(value) : value;
 
     if (isNaN(num)) {
@@ -261,12 +291,12 @@ export class ValidateRangePipe implements WynkPipeTransform<number, number> {
  * async create(@Body('comment', StripHTMLPipe) comment: string) {}
  */
 export class StripHTMLPipe implements WynkPipeTransform<string, string> {
-  transform(value: string, metadata?: ArgumentMetadata): string {
+  transform(value: string, _metadata?: ArgumentMetadata): string {
     if (typeof value !== "string") {
       return value;
     }
 
-    return value.replace(/<[^>]*>/g, "");
+    return value.replace(/<[^>]{0,2000}>/g, "");
   }
 }
 
@@ -277,7 +307,7 @@ export class StripHTMLPipe implements WynkPipeTransform<string, string> {
  * async create(@Body('title', SlugifyPipe) slug: string) {}
  */
 export class SlugifyPipe implements WynkPipeTransform<string, string> {
-  transform(value: string, metadata?: ArgumentMetadata): string {
+  transform(value: string, _metadata?: ArgumentMetadata): string {
     if (typeof value !== "string") {
       return value;
     }
@@ -287,7 +317,8 @@ export class SlugifyPipe implements WynkPipeTransform<string, string> {
       .trim()
       .replace(/[^\w\s-]/g, "")
       .replace(/[\s_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+      .replace(/^-+/g, "")
+      .replace(/-+$/g, "");
   }
 }
 
@@ -297,12 +328,13 @@ export class SlugifyPipe implements WynkPipeTransform<string, string> {
  * @Get()
  * async search(@Query('tags', ParseCommaSeparatedPipe) tags: string[]) {}
  */
-export class ParseCommaSeparatedPipe
-  implements WynkPipeTransform<string, string[]>
-{
+export class ParseCommaSeparatedPipe implements WynkPipeTransform<
+  string,
+  string[]
+> {
   constructor(private trim: boolean = true) {}
 
-  transform(value: string, metadata?: ArgumentMetadata): string[] {
+  transform(value: string, _metadata?: ArgumentMetadata): string[] {
     if (!value || typeof value !== "string") {
       return [];
     }

@@ -299,19 +299,32 @@ describe("WynkFactory - CORS and Global Prefix", () => {
     console.log = originalLog;
   });
 
-  it("should configure global prefix when set", () => {
-    const consoleLogSpy = mock(() => {});
-    const originalLog = console.log;
-    console.log = consoleLogSpy;
+  it("should configure global prefix when set", async () => {
+    @Injectable()
+    @Controller("/items")
+    class PrefixedController {
+      @Get("/")
+      list() {
+        return { items: [] };
+      }
+    }
 
-    WynkFactory.create({
+    const app = WynkFactory.create({
+      controllers: [PrefixedController],
       globalPrefix: "/api/v1",
     });
 
-    // Should have logged global prefix configured message
-    expect(consoleLogSpy).toHaveBeenCalled();
+    // Routes should be reachable under the global prefix
+    const res = await app.handle(
+      new Request("http://localhost/api/v1/items/")
+    );
+    expect(res.status).toBe(200);
 
-    console.log = originalLog;
+    // Routes without prefix should NOT match
+    const res2 = await app.handle(
+      new Request("http://localhost/items/")
+    );
+    expect(res2.status).toBe(404);
   });
 });
 

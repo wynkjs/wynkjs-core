@@ -20,7 +20,7 @@ import "dotenv/config";
 const userTable = pgTable("user_benchmark", {
   id: uuid("id").primaryKey().defaultRandom(),
   username: varchar("username", { length: 100 }),
-  email: varchar("email", { length: 255 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull(),
   mobile: varchar("mobile", { length: 20 }),
   password: varchar("password", { length: 255 }),
   firstName: varchar("first_name", { length: 100 }),
@@ -35,9 +35,6 @@ const userTable = pgTable("user_benchmark", {
 // Database connection
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
 });
 
 const db = drizzle(pool);
@@ -61,7 +58,19 @@ const app = new Elysia()
   }))
   .get("/users", async ({ set }) => {
     try {
-      const allUsers = await db.select().from(userTable).limit(100);
+      const allUsers = await db
+        .select({
+          id: userTable.id,
+          email: userTable.email,
+          username: userTable.username,
+          firstName: userTable.firstName,
+          lastName: userTable.lastName,
+          isActive: userTable.isActive,
+          createdAt: userTable.createdAt,
+          updatedAt: userTable.updatedAt,
+        })
+        .from(userTable)
+        .limit(100);
       return allUsers;
     } catch (error: any) {
       console.error("Error fetching users:", error);
@@ -72,7 +81,16 @@ const app = new Elysia()
   .get("/users/:id", async ({ params, set }) => {
     try {
       const user = await db
-        .select()
+        .select({
+          id: userTable.id,
+          email: userTable.email,
+          username: userTable.username,
+          firstName: userTable.firstName,
+          lastName: userTable.lastName,
+          isActive: userTable.isActive,
+          createdAt: userTable.createdAt,
+          updatedAt: userTable.updatedAt,
+        })
         .from(userTable)
         .where(eq(userTable.id, params.id));
 
@@ -90,6 +108,21 @@ const app = new Elysia()
   })
   .post("/users", async ({ body, set }: any) => {
     try {
+      if (!body.email) {
+        set.status = 400;
+        return { error: "Email is required" };
+      }
+
+      if (!body.password) {
+        set.status = 400;
+        return { error: "Password is required" };
+      }
+
+      const hashedPassword = await Bun.password.hash(body.password, {
+        algorithm: "bcrypt",
+        cost: 4,
+      });
+
       const newUser = await db
         .insert(userTable)
         .values({
@@ -97,8 +130,18 @@ const app = new Elysia()
           username: body.username || body.name,
           firstName: body.firstName,
           lastName: body.lastName,
+          password: hashedPassword,
         })
-        .returning();
+        .returning({
+          id: userTable.id,
+          email: userTable.email,
+          username: userTable.username,
+          firstName: userTable.firstName,
+          lastName: userTable.lastName,
+          isActive: userTable.isActive,
+          createdAt: userTable.createdAt,
+          updatedAt: userTable.updatedAt,
+        });
 
       set.status = 201;
       return newUser[0];

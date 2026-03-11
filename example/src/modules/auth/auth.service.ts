@@ -1,256 +1,187 @@
 import { Injectable, Singleton } from "wynkjs";
-import { DatabaseService } from "../../database";
-import { userTable, userRoleTable, roleTable } from "../../database/schema";
-import { eq } from "drizzle-orm";
 import type { AuthUser, UserRole } from "./auth.types";
 
-/**
- * Authentication Service
- * Handles user registration, login, and authentication operations
- */
+interface StoredUser {
+  id: string;
+  email: string;
+  passwordHash: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  roles: UserRole[];
+  isActive: boolean;
+}
+
 @Injectable()
 @Singleton()
 export class AuthService {
-  constructor(private databaseService: DatabaseService) {}
+  private users: Map<string, StoredUser> = new Map();
+  private usersByEmail: Map<string, string> = new Map();
+  private counter = 1;
+  private readonly ready: Promise<void>;
 
-  /**
-   * Hash password using simple approach
-   * In production, use bcrypt or similar
-   */
-  private async hashPassword(password: string): Promise<string> {
-    // For demo purposes - in production use bcrypt
-    return Buffer.from(password).toString("base64");
+  constructor() {
+    this.ready = this.seedUsers();
   }
 
-  /**
-   * Compare plain password with hashed password
-   */
+  private async seedUsers() {
+    const adminId = "auth-user-1";
+    const adminHash = await Bun.password.hash("password123", {
+      algorithm: "bcrypt",
+      cost: 10,
+    });
+    this.users.set(adminId, {
+      id: adminId,
+      email: "admin@example.com",
+      passwordHash: adminHash,
+      firstName: "Admin",
+      lastName: "User",
+      username: "admin",
+      roles: ["admin", "user"],
+      isActive: true,
+    });
+    this.usersByEmail.set("admin@example.com", adminId);
+
+    const userId = "auth-user-2";
+    const userHash = await Bun.password.hash("password123", {
+      algorithm: "bcrypt",
+      cost: 10,
+    });
+    this.users.set(userId, {
+      id: userId,
+      email: "user@example.com",
+      passwordHash: userHash,
+      firstName: "Regular",
+      lastName: "User",
+      username: "regularuser",
+      roles: ["user"],
+      isActive: true,
+    });
+    this.usersByEmail.set("user@example.com", userId);
+
+    this.counter = 3;
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    return Bun.password.hash(password, { algorithm: "bcrypt", cost: 10 });
+  }
+
   private async comparePassword(
     plain: string,
-    hashed: string
+    hashed: string,
   ): Promise<boolean> {
-    const hashedPlain = Buffer.from(plain).toString("base64");
-    return hashedPlain === hashed;
+    return Bun.password.verify(plain, hashed);
   }
 
-  /**
-   * Register a new user
-   */
   async registerUser(
     email: string,
     password: string,
     firstName?: string,
     lastName?: string,
-    username?: string
+    username?: string,
   ) {
-    try {
-      const db = this.databaseService.getDb();
+    await this.ready;
 
-      // Check if user already exists
-      const existingUser = await db
-        .select()
-        .from(userTable)
-        .where(eq(userTable.email, email));
-
-      if (existingUser.length > 0) {
-        throw new Error("User with this email already exists");
-      }
-
-      // Hash password
-      const hashedPassword = await this.hashPassword(password);
-
-      // Create user with guaranteed unique username and mobile
-      const emailPrefix = email.split("@")[0];
-      const timestamp = Date.now();
-      const randomStr = Math.random().toString(36).substring(2, 7); // 5 chars
-      
-      const [newUser] = await db
-        .insert(userTable)
-        .values({
-          email,
-          password: hashedPassword,
-          firstName: firstName || null,
-          lastName: lastName || null,
-          username: username || `${emailPrefix}_${timestamp}`,
-          mobile: `${timestamp}${randomStr}`, // Fits in varchar(20)
-        })
-        .returning();
-
-      // Get default user role
-      const [userRole] = await db
-        .select()
-        .from(roleTable)
-        .where(eq(roleTable.name, "user"));
-
-      // Assign user role
-      if (userRole) {
-        await db.insert(userRoleTable).values({
-          userId: newUser.id,
-          roleId: userRole.id,
-        });
-      }
-
-      return {
-        id: newUser.id,
-        email: newUser.email,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-      };
-    } catch (error) {
-      // Log the full error for debugging
-      console.error('Registration error:', error);
-      const errorMessage = (error as any).message || String(error);
-      const errorDetail = (error as any).detail || '';
-      const errorHint = (error as any).hint || '';
-      throw new Error(`Registration failed: ${errorMessage}${errorDetail ? ' | Detail: ' + errorDetail : ''}${errorHint ? ' | Hint: ' + errorHint : ''}`);
+    if (this.usersByEmail.has(email)) {
+      throw new Error("User with this email already exists");
     }
+
+    const id = `auth-user-${this.counter++}`;
+    this.usersByEmail.set(email, id);
+
+    let stored: StoredUser;
+    try {
+      stored = {
+        id,
+        email,
+        passwordHash: await this.hashPassword(password),
+        firstName,
+        lastName,
+        username: username || email.split("@")[0],
+        roles: ["user"],
+        isActive: true,
+      };
+    } catch (err) {
+      this.usersByEmail.delete(email);
+      this.counter--;
+      throw err;
+    }
+
+    this.users.set(id, stored);
+
+    return { id: stored.id, email: stored.email, firstName, lastName };
   }
 
-  /**
-   * Authenticate user and return JWT payload
-   */
   async validateUser(
     email: string,
-    password: string
+    password: string,
   ): Promise<AuthUser | null> {
-    try {
-      const db = this.databaseService.getDb();
-
-      // Find user by email
-      const users = await db
-        .select()
-        .from(userTable)
-        .where(eq(userTable.email, email));
-
-      if (users.length === 0) {
-        return null;
-      }
-
-      const user = users[0];
-
-      // Check password
-      const isValidPassword = await this.comparePassword(
-        password,
-        user.password || ""
-      );
-
-      if (!isValidPassword) {
-        return null;
-      }
-
-      // Check if user is active
-      if (!user.isActive) {
-        throw new Error("User account is disabled");
-      }
-
-      // Get user roles
-      const userRoles = await db
-        .select({ name: roleTable.name })
-        .from(userRoleTable)
-        .innerJoin(
-          roleTable,
-          eq(userRoleTable.roleId, roleTable.id)
-        )
-        .where(eq(userRoleTable.userId, user.id));
-
-      const roles = userRoles.map((r: any) => r.name as UserRole);
-
-      // Update last login
-      await db
-        .update(userTable)
-        .set({ lastLoginAt: new Date() })
-        .where(eq(userTable.id, user.id));
-
-      return {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        roles: roles.length > 0 ? roles : ["guest"],
-      };
-    } catch (error) {
-      console.error("Validation error:", error);
+    await this.ready;
+    const stored = Array.from(this.users.values()).find(
+      (u) => u.email === email,
+    );
+    if (!stored) return null;
+    if (!(await this.comparePassword(password, stored.passwordHash)))
       return null;
-    }
+    if (!stored.isActive) return null;
+
+    return {
+      id: stored.id,
+      email: stored.email,
+      username: stored.username,
+      firstName: stored.firstName,
+      lastName: stored.lastName,
+      roles: stored.roles,
+    };
   }
 
-  /**
-   * Get user by ID with their roles
-   */
   async getUserWithRoles(userId: string): Promise<AuthUser | null> {
-    try {
-      const db = this.databaseService.getDb();
-
-      const users = await db
-        .select()
-        .from(userTable)
-        .where(eq(userTable.id, userId));
-
-      if (users.length === 0) {
-        return null;
-      }
-
-      const user = users[0];
-
-      // Get user roles
-      const userRoles = await db
-        .select({ name: roleTable.name })
-        .from(userRoleTable)
-        .innerJoin(
-          roleTable,
-          eq(userRoleTable.roleId, roleTable.id)
-        )
-        .where(eq(userRoleTable.userId, userId));
-
-      const roles = userRoles.map((r: any) => r.name as UserRole);
-
-      return {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        roles: roles.length > 0 ? roles : ["guest"],
-      };
-    } catch (error) {
-      console.error("Get user error:", error);
-      return null;
-    }
+    await this.ready;
+    const stored = this.users.get(userId);
+    if (!stored) return null;
+    return {
+      id: stored.id,
+      email: stored.email,
+      username: stored.username,
+      firstName: stored.firstName,
+      lastName: stored.lastName,
+      roles: stored.roles,
+    };
   }
 
-  /**
-   * Verify JWT token (in production, use jwt library)
-   */
   verifyToken(token: string, secret: string): any {
     try {
-      // In production, use 'jsonwebtoken' library
-      // For demo, using simple base64 encoding
-      const decoded = Buffer.from(token.split(".")[1] || "", "base64").toString(
-        "utf-8"
-      );
-      return JSON.parse(decoded);
-    } catch (error) {
+      const parts = token.split(".");
+      if (parts.length !== 3) return null;
+      const [header, body, sig] = parts;
+      const hasher = new Bun.CryptoHasher("sha256", secret);
+      hasher.update(`${header}.${body}`);
+      const expected = hasher.digest("base64url");
+      if (sig !== expected) return null;
+      const decoded = Buffer.from(body, "base64url").toString("utf-8");
+      const payload = JSON.parse(decoded);
+      if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp)
+        return null;
+      return payload;
+    } catch {
       return null;
     }
   }
 
-  /**
-   * Create JWT token (in production, use jwt library)
-   */
   createToken(payload: any, secret: string, expiresIn: number = 3600): string {
-    // In production, use 'jsonwebtoken' library
-    // For demo, using simple base64 encoding
-    const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64");
+    const header = Buffer.from(
+      JSON.stringify({ alg: "HS256", typ: "JWT" }),
+    ).toString("base64url");
     const body = Buffer.from(
       JSON.stringify({
         ...payload,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + expiresIn,
-      })
-    ).toString("base64");
-    const signature = Buffer.from(secret).toString("base64");
-
+      }),
+    ).toString("base64url");
+    const hasher = new Bun.CryptoHasher("sha256", secret);
+    hasher.update(`${header}.${body}`);
+    const signature = hasher.digest("base64url");
     return `${header}.${body}.${signature}`;
   }
 }

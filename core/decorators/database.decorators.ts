@@ -112,7 +112,7 @@ export function InjectModel(model: any): ParameterDecorator {
  * ```
  */
 export function registerTables(tables: Record<string, any>): void {
-  for (const [name, table] of Object.entries(tables)) {
+  for (const [_name, table] of Object.entries(tables)) {
     const token = getOrCreateTableToken(table);
     if (!container.isRegistered(token)) {
       container.register(token, { useValue: table });
@@ -134,7 +134,7 @@ export function registerTables(tables: Record<string, any>): void {
  * ```
  */
 export function registerModels(models: Record<string, any>): void {
-  for (const [name, model] of Object.entries(models)) {
+  for (const [_name, model] of Object.entries(models)) {
     const token = getOrCreateModelToken(model);
     if (!container.isRegistered(token)) {
       container.register(token, { useValue: model });

@@ -1,128 +1,178 @@
-import "dotenv/config"; // ✅ Load environment variables
 import {
-  FormatErrorFormatter,
-  SimpleErrorFormatter,
-  DetailedErrorFormatter,
   WynkFactory,
-  CorsOptions,
+  DetailedErrorFormatter,
+  GlobalExceptionFilter,
   compression,
 } from "wynkjs";
+import { swagger } from "@elysiajs/swagger";
 
-import { GlobalExceptionFilter, DatabaseExceptionFilter } from "wynkjs";
-import { UserController } from "./modules/user/user.controller";
-import { ValidationExceptionFilter } from "./filter/validation.filter";
-import { CustomExceptionFilter } from "./filter/custom.filter";
-import { ProductController } from "./modules/product/product.controller";
-import { CorsTestController } from "./modules/cors-test/cors-test.controller";
-import { DatabaseService } from "./database";
-import { corsOptions } from "./corsOptions";
-import { AuthController } from "./modules/auth/auth.controller";
-import { AuthService } from "./modules/auth/auth.service";
-import { AuthGuard } from "./modules/auth/auth.guard";
-import { RoleSeeder } from "./modules/auth/role-seeder.service";
-import { ProtectedRoutesController } from "./modules/protected/protected-routes.controller";
-import { SessionController } from "./modules/session/session.controller";
-// Import CORS examples
+// Feature Modules
+import { UserModule } from "./modules/user/user.module";
+import { ProductModule } from "./modules/product/product.module";
+import { AuthModule } from "./modules/auth/auth.module";
+import { ProtectedModule } from "./modules/protected/protected.module";
+import { SessionModule } from "./modules/session/session.module";
+import { DemoModule } from "./modules/demo/demo.module";
+import { HealthModule } from "./modules/health/health.module";
+import { PipesModule } from "./modules/pipes/pipes.module";
+import { InterceptorsModule } from "./modules/interceptors/interceptors.module";
+import { FiltersModule } from "./modules/filters/filters.module";
+import { ProvidersModule } from "./modules/providers/providers.module";
+import { FormattersModule } from "./modules/formatters/formatters.module";
 import {
-  corsDynamicValidation,
-  corsEnvironmentBased,
-  corsWithLogging,
-  corsMultiTenant,
-  corsSecure,
-  corsDevelopment,
-} from "./cors-examples";
+  APP_CONFIG,
+  LOG_LEVEL,
+  ASYNC_CONFIG,
+} from "./modules/providers/config.token";
 
-/**
- * Bootstrap WynkJS Application
- * Example of using WynkJS framework with Database Provider
- */
 async function bootstrap() {
-  console.log("🚀 Starting WynkJS Application...\n");
-
-  // CORS Configuration Options:
-  // 1. corsOptions - Production whitelist (from corsOptions.ts)
-  // 2. corsDynamicValidation - Dynamic validation with subdomain support
-  // 3. corsEnvironmentBased - Different behavior per environment
-  // 4. corsWithLogging - Detailed logging
-  // 5. corsMultiTenant - Multi-tenant support
-  // 6. corsSecure - Advanced security
-  // 7. corsDevelopment - Development-friendly (allows all in dev)
-  // 8. true - Allow all origins (simple mode)
-
-  const selectedCors = corsDevelopment; // Change this to test different configs
-
-  console.log("🔒 CORS Configuration: Development Mode");
-  console.log("   - Allows all origins in development");
-  console.log("   - Strict whitelist in production\n");
-
-  // Create WynkJS application with providers and controllers
   const app = WynkFactory.create({
+    modules: [
+      UserModule,
+      ProductModule,
+      AuthModule,
+      ProtectedModule,
+      SessionModule,
+      DemoModule,
+      HealthModule,
+      PipesModule,
+      InterceptorsModule,
+      FiltersModule,
+      ProvidersModule,
+      FormattersModule,
+    ],
     providers: [
-      DatabaseService, // ✅ Database provider - initialized before controllers
-      AuthService, // ✅ Auth service provider
-      AuthGuard, // ✅ Auth guard provider
-      RoleSeeder, // ✅ Role seeder provider
+      {
+        provide: APP_CONFIG,
+        useValue: { name: "WynkJS Demo", version: "1.0.9", env: "development" },
+      },
+      { provide: LOG_LEVEL, useValue: "debug" },
+      {
+        provide: ASYNC_CONFIG,
+        useFactory: (cfg: any) => ({
+          ...cfg,
+          extra: true,
+          timestamp: Date.now(),
+        }),
+        inject: [APP_CONFIG],
+      },
     ],
-    controllers: [
-      UserController,
-      ProductController,
-      CorsTestController,
-      AuthController, // ✅ Auth controller
-      ProtectedRoutesController, // ✅ Protected routes controller
-      SessionController, // ✅ Session controller - demonstrates Request/Response architecture
-    ],
-    cors: selectedCors,
+    cors: true,
     logger: true,
+    globalPrefix: "/api",
     validationErrorFormatter: new DetailedErrorFormatter(),
   });
 
-  // Enable compression middleware
+  // Compression middleware
   app.use(
     compression({
-      threshold: 1024, // Compress responses larger than 1KB
-      encodings: ["br", "gzip", "deflate"], // Support Brotli, Gzip, and Deflate
+      threshold: 1024,
+      encodings: ["br", "gzip", "deflate"],
     })
   );
 
-  // Option 2: With FormatErrorFormatter (object-based format)
-  // const app = WynkFactory.create({
-  //   controllers: [UserController],
-  //   cors: true,
-  //   logger: true,
-  //   validationErrorFormatter: new FormatErrorFormatter(),
-  // });
+  // Global exception filter (catches unhandled exceptions)
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // Option 3: With SimpleErrorFormatter (array of messages)
-  // const app = WynkFactory.create({
-  //   controllers: [UserController],
-  //   cors: true,
-  //   logger: true,
-  //   validationErrorFormatter: new SimpleErrorFormatter(),
-  // });
+  // Build the underlying Elysia server
+  const server = await app.build();
 
-  // Option 4: With DetailedErrorFormatter (detailed field info)
-  // const app = WynkFactory.create({
-  //   controllers: [UserController],
-  //   cors: true,
-  //   logger: true,
-  //   validationErrorFormatter: new DetailedErrorFormatter(),
-  // });
+  // Attach Swagger docs (must be called on the raw Elysia instance)
+  server.use(
+    swagger({
+      documentation: {
+        info: {
+          title: "WynkJS Demo API",
+          version: "1.0.9",
+          description: `
+# WynkJS Feature Demo
 
-  // Register global exception filter
-  // CustomExceptionFilter handles all exceptions with production/development modes
-  app.useGlobalFilters(
-    process.env.NODE_ENV === "production"
-      ? new DatabaseExceptionFilter()
-      : new GlobalExceptionFilter()
+Complete API showcasing every WynkJS feature — no database required.
+
+## Modules
+
+- **User** – Full CRUD, DTO validation
+- **Product** – Product catalog CRUD
+- **Auth** – JWT login/register (in-memory)
+- **Protected** – Role-based guards
+- **Session** – Cookie sessions via Request/Response
+- **Demo** – Guards, Pipes, Interceptors, SetMetadata, Reflector, createParamDecorator, HttpStatus, applyDecorators, @Headers, @User, @Context, @Ip, @Session, @HostParam, @UploadedFile/@UploadedFiles, @Head, @Options, @Redirect, @Sse, @Use, schemaRegistry
+- **Health** – OnModuleInit / OnModuleDestroy lifecycle
+- **Pipes** – ParseIntPipe, ParseBoolPipe, ValidationPipe, custom pipes, @UsePipes at method and param level
+- **Interceptors** – Logging, transform, timeout interceptors; @UseInterceptors at controller and method level
+- **Filters** – Custom @Catch filters, @UseFilters, built-in HttpWynkExceptionFilter, AllExceptions, every HTTP exception type
+- **Providers** – ValueProvider, FactoryProvider, ExistingProvider, ClassProvider, @Optional, @Inject
+- **Formatters** – FormatErrorFormatter, SimpleErrorFormatter, DetailedErrorFormatter
+
+## Default credentials
+
+| Email | Password | Roles |
+|---|---|---|
+| admin@example.com | password123 | admin, user |
+| user@example.com | password123 | user |
+
+## Auth flow
+
+1. \`POST /auth/login\` → get \`token\`
+2. Click **Authorize** → paste \`Bearer <token>\`
+          `.trim(),
+        },
+        tags: [
+          { name: "User", description: "User management — CRUD with DTO validation" },
+          { name: "Product", description: "Product catalog — CRUD operations" },
+          { name: "Auth", description: "JWT authentication — login, register, profile" },
+          { name: "Protected", description: "Role-based access control (requires JWT)" },
+          { name: "Session", description: "Cookie-based sessions via WynkRequest/WynkResponse" },
+          {
+            name: "Demo",
+            description:
+              "Advanced features: guards, pipes, interceptors, metadata, lifecycle, param decorators, HTTP method decorators, schemaRegistry",
+          },
+          { name: "Health", description: "Health check — OnModuleInit / OnModuleDestroy lifecycle" },
+          { name: "Pipes", description: "Built-in and custom pipes — ParseIntPipe, ParseBoolPipe, ValidationPipe, @UsePipes" },
+          {
+            name: "Interceptors",
+            description:
+              "Logging, transform, timeout interceptors — @UseInterceptors at controller and method level",
+          },
+          {
+            name: "Filters",
+            description:
+              "Custom @Catch filters, @UseFilters, built-in exception filters, all HTTP exception types",
+          },
+          {
+            name: "Providers",
+            description:
+              "ValueProvider, FactoryProvider, ExistingProvider, ClassProvider, @Optional, @Inject",
+          },
+          {
+            name: "Formatters",
+            description:
+              "FormatErrorFormatter, SimpleErrorFormatter, DetailedErrorFormatter validation error formats",
+          },
+        ],
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: "http",
+              scheme: "bearer",
+              bearerFormat: "JWT",
+            },
+          },
+        },
+      },
+      path: "/docs",
+    })
   );
 
-  // Start server
-  await app.listen(3000);
+  server.listen(3000);
 
-  console.log("🎉 WynkJS Application is running on http://localhost:3000");
+  console.log("\n🚀 WynkJS demo server running!");
+  console.log("   API  → http://localhost:3000");
+  console.log("   Docs → http://localhost:3000/docs\n");
 }
 
-bootstrap().catch((error) => {
-  console.error("❌ Failed to start application:", error);
+bootstrap().catch((err) => {
+  console.error("❌ Failed to start:", err);
   process.exit(1);
 });

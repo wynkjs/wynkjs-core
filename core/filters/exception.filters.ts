@@ -41,7 +41,7 @@ import { ExecutionContext } from "../decorators/guard.decorators";
  */
 export class DatabaseExceptionFilter implements WynkExceptionFilter {
   catch(exception: any, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
     const request = context.getRequest();
 
     // Don't catch HttpException or its subclasses (like ConflictException)
@@ -161,7 +161,7 @@ export class NotFoundExceptionFilter
  */
 export class FileUploadExceptionFilter implements WynkExceptionFilter {
   catch(exception: any, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
     const request = context.getRequest();
 
     // Don't catch HttpException or its subclasses
@@ -196,7 +196,7 @@ export class FileUploadExceptionFilter implements WynkExceptionFilter {
  */
 export class GlobalExceptionFilter implements WynkExceptionFilter {
   catch(exception: any, context: ExecutionContext) {
-    const response = context.getResponse();
+    const _response = context.getResponse();
     const request = context.getRequest();
 
     const statusCode = exception.statusCode || 500;

@@ -2,13 +2,17 @@ import {
   Controller,
   Get,
   Post,
+  Put,
+  Delete,
   Body,
   Param,
   Patch,
   Query,
-  DTO,
   NotFoundException,
+  ConflictException,
   Injectable,
+  HttpCode,
+  HttpStatus,
 } from "wynkjs";
 
 import {
@@ -16,104 +20,70 @@ import {
   type ParamIdType,
   type UserQueryType,
   type UserUpdateType,
-  type MultiParamType,
   CreateUserDTO,
-  MultiParamDto,
   UserQueryDto,
   UserIdDto,
   UserUpdateDTO,
 } from "./user.dto";
-import { EmailService } from "../email/email.service";
+import { UserService } from "./user.service";
 
 @Injectable()
 @Controller("/users")
 export class UserController {
-  constructor(private emailService: EmailService) {}
+  constructor(private userService: UserService) {}
+
   @Get("/")
-  async list() {
-    return { users: ["Alice", "Bob", "Charlie"] };
+  async list(@Query() query: UserQueryType) {
+    const users = await this.userService.findAll();
+    return { users, query };
   }
 
-  @Post({
-    path: "/:id1/:id2",
-    body: CreateUserDTO,
-    params: MultiParamDto, // ✅ Schema matches route params :id1 and :id2
-    query: UserQueryDto,
-  })
-  async create(
-    @Body() body: CreateUserType,
-    @Param("id1") id1: string, // ✅ Extract id1 as string
-    @Param("id2") id2: string, // ✅ Extract id2 as string
-    @Query() query: UserQueryType
-  ) {
-    // Send welcome email - EmailExceptionFilter will handle any errors
-    if (body.email && body.name) {
-      await this.emailService.sendWelcomeEmail(body.email, body.name);
-    }
-
-    return { message: "User created", data: body, params: { id1, id2 }, query };
+  @Get({ path: "/:id", params: UserIdDto })
+  async findOne(@Param("id") id: string) {
+    const user = await this.userService.findById(id);
+    if (!user) throw new NotFoundException(`User ${id} not found`);
+    return { user };
   }
 
-  @Get({ path: "/:id", params: UserIdDto, query: UserQueryDto })
-  async findOne(
-    @Param("id") id: string, // ✅ Extract id as string
-    @Query() query: UserQueryType
-  ) {
-    return {
-      user: { id, name: "Alice" },
-      query: query,
-    };
+  @Post({ path: "/", body: CreateUserDTO })
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() body: CreateUserType) {
+    const existing = await this.userService.findByEmail(body.email);
+    if (existing) throw new ConflictException("Email already registered");
+    const user = await this.userService.create({
+      email: body.email,
+      firstName: body.name,
+      mobile: body.mobile,
+    });
+    return { message: "User created", user };
   }
 
-  @Get("/all")
-  async getAll() {
-    return {
-      user: { name: "All" },
-    };
-  }
-
-  @Patch({
-    path: "/:id",
-    body: UserUpdateDTO,
-    params: UserIdDto,
-    query: UserQueryDto,
-  })
-  // @Use(jwtGuard, rolesGuard([UserRole.USER]))
+  @Patch({ path: "/:id", body: UserUpdateDTO, params: UserIdDto, query: UserQueryDto })
   async update(
-    @Param("id") id: string, // ✅ Extract id as string
+    @Param("id") id: string,
     @Body() body: UserUpdateType,
     @Query() query: UserQueryType
   ) {
-    // No try-catch needed - let WynkJS exception filters handle errors
-    if (id == "params") {
-      throw new NotFoundException("User not found");
-    }
-
-    return {
-      message: "User updated",
-      id,
-      data: body,
-      query,
-    };
+    const user = await this.userService.update(id, { email: body.email, age: body.age });
+    if (!user) throw new NotFoundException(`User ${id} not found`);
+    return { message: "User updated", user, query };
   }
 
-  /**
-   * Test endpoint for email exception handling
-   * POST /users/send-reset-email
-   */
-  @Post({ path: "/send-reset-email" })
-  async sendPasswordReset(@Body() body: { email: string; userId: string }) {
-    // This will throw EmailException if anything goes wrong
-    // EmailExceptionFilter will catch and handle it
-    await this.emailService.sendPasswordResetEmail(
-      body.email,
-      "reset-token-123"
-    );
-
-    return {
-      message: "Password reset email sent",
+  @Put({ path: "/:id", body: CreateUserDTO, params: UserIdDto })
+  async replace(@Param("id") id: string, @Body() body: CreateUserType) {
+    const user = await this.userService.update(id, {
       email: body.email,
-      userId: body.userId,
-    };
+      firstName: body.name,
+      mobile: body.mobile,
+    });
+    if (!user) throw new NotFoundException(`User ${id} not found`);
+    return { message: "User replaced", user };
+  }
+
+  @Delete({ path: "/:id", params: UserIdDto })
+  async remove(@Param("id") id: string) {
+    const deleted = await this.userService.delete(id);
+    if (!deleted) throw new NotFoundException(`User ${id} not found`);
+    return { message: "User deleted", id };
   }
 }

@@ -11,14 +11,50 @@ export class DatabaseService {
 
   async onModuleInit() {
     try {
+      const databaseUrl = process.env.DATABASE_URL ?? "";
+      let ssl: boolean | { rejectUnauthorized: boolean };
+      try {
+        const parsed = new URL(databaseUrl);
+        const sslmode = parsed.searchParams.get("sslmode");
+        const allowInsecureSsl = process.env.PGSSL_ALLOW_INSECURE === "true";
+        if (sslmode === "disable") {
+          ssl = false;
+        } else if (sslmode === "require") {
+          // "require" does not verify the certificate, so insecure override is acceptable
+          ssl = allowInsecureSsl ? { rejectUnauthorized: false } : true;
+        } else if (sslmode === "verify-ca" || sslmode === "verify-full") {
+          // These modes exist specifically to verify certificates; never disable verification
+          if (allowInsecureSsl) {
+            console.warn(
+              `[DatabaseService] PGSSL_ALLOW_INSECURE=true is ignored for sslmode=${sslmode} ` +
+                `because certificate verification is required by that mode.`,
+            );
+          }
+          ssl = true;
+        } else {
+          // No sslmode param — use hostname-based detection
+          // Normalize bracketed IPv6 addresses (e.g. "[::1]" → "::1")
+          const rawHostname = parsed.hostname;
+          const hostname =
+            rawHostname.startsWith("[") && rawHostname.endsWith("]")
+              ? rawHostname.slice(1, -1)
+              : rawHostname;
+          const isLocal =
+            hostname === "localhost" ||
+            hostname === "127.0.0.1" ||
+            hostname === "::1";
+          ssl = isLocal
+            ? false
+            : allowInsecureSsl
+              ? { rejectUnauthorized: false }
+              : true;
+        }
+      } catch {
+        ssl = false;
+      }
       this.pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        max: 100, // Increased for high concurrency benchmarking
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 10000, // Increased to 10 seconds for cloud databases
-        ssl: {
-          rejectUnauthorized: false, // Match sslmode=no-verify from DATABASE_URL
-        },
+        connectionString: databaseUrl,
+        ssl,
       });
 
       this.db = drizzle(this.pool, {

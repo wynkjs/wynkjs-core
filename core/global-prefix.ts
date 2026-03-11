@@ -20,8 +20,8 @@ export interface GlobalPrefixOptions {
  */
 export function applyGlobalPrefix(
   app: Elysia,
-  prefix: string | GlobalPrefixOptions
-): any {
+  prefix: string | GlobalPrefixOptions,
+): Elysia {
   // Normalize prefix
   let prefixStr: string;
   let excludedRoutes: string[] = [];
@@ -38,16 +38,15 @@ export function applyGlobalPrefix(
 
   if (!prefixStr) {
     console.warn(
-      "⚠️  Global prefix is empty after normalization. Skipping prefix setup."
+      "⚠️  Global prefix is empty after normalization. Skipping prefix setup.",
     );
     return app;
   }
 
-  // Create a new Elysia instance with the prefix
-  const prefixedApp = new Elysia({ prefix: prefixStr });
+  const prefixedApp = new Elysia().use(
+    new Elysia({ prefix: prefixStr }).use(app),
+  );
 
-  // Note: Elysia's prefix option automatically applies to all routes
-  // registered on this instance. We'll return the prefixed instance.
   console.log(`✅ Global prefix applied: ${prefixStr}`);
 
   if (excludedRoutes.length > 0) {
@@ -86,7 +85,7 @@ export function normalizePrefixPath(prefix: string): string {
   const validPattern = /^\/[\w\-\/]*$/;
   if (!validPattern.test(normalized)) {
     throw new Error(
-      `Invalid global prefix format: "${prefix}". Only alphanumeric, hyphens, underscores, and forward slashes are allowed.`
+      `Invalid global prefix format: "${prefix}". Only alphanumeric, hyphens, underscores, and forward slashes are allowed.`,
     );
   }
 
@@ -101,7 +100,7 @@ export function normalizePrefixPath(prefix: string): string {
  */
 export function isRouteExcluded(
   path: string,
-  excludedRoutes: string[]
+  excludedRoutes: string[],
 ): boolean {
   if (!excludedRoutes || excludedRoutes.length === 0) {
     return false;
@@ -136,8 +135,8 @@ export function isRouteExcluded(
  */
 export function wrapWithPrefix(
   app: Elysia,
-  prefix: string | GlobalPrefixOptions
-): any {
+  prefix: string | GlobalPrefixOptions,
+): Elysia {
   let prefixStr: string;
   let excludedRoutes: string[] = [];
 
@@ -150,17 +149,19 @@ export function wrapWithPrefix(
 
   prefixStr = normalizePrefixPath(prefixStr);
 
-  // Create wrapper app with prefix
   const wrapper = new Elysia();
 
-  // Mount the original app under the prefix
   wrapper.use(
     new Elysia({
       prefix: prefixStr,
-    }).use(app)
+    }).use(app),
   );
 
   console.log(`✅ Wrapped existing app with prefix: ${prefixStr}`);
+
+  if (excludedRoutes.length > 0) {
+    console.log(`   Excluded routes: ${excludedRoutes.join(", ")}`);
+  }
 
   return wrapper;
 }
@@ -171,7 +172,7 @@ export function wrapWithPrefix(
  * @returns true if valid, throws error if invalid
  */
 export function validateGlobalPrefix(
-  prefix: string | GlobalPrefixOptions
+  prefix: string | GlobalPrefixOptions,
 ): boolean {
   if (typeof prefix === "string") {
     // Validate string prefix
@@ -205,7 +206,7 @@ export function validateGlobalPrefix(
       prefix.exclude.forEach((route) => {
         if (typeof route !== "string") {
           throw new Error(
-            "All routes in GlobalPrefixOptions.exclude must be strings"
+            "All routes in GlobalPrefixOptions.exclude must be strings",
           );
         }
       });

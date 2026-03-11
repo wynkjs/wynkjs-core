@@ -16,7 +16,7 @@ export const CreateUserDTO = DTO.Object({
 export type CreateUserDTOType = Static<typeof CreateUserDTO>;
 export interface CreateUserType {
   name?: string;
-  email?: string;
+  email: string;
   mobile?: string;
   age?: number;
 }
